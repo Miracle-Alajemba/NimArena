@@ -1,0 +1,12 @@
+{
+  "name": "nimarena",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NimArena — Competitive mini-game hub running inside Nimiq Pay",
+  "license": "MIT",
+  "workspaces": [
+    "contracts",
+    "backend",
+    "frontend"
+  ]
+}

@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model TriviaQuestion {
+  id         Int    @id @default(autoincrement())
+  question   String
+  optionA    String
+  optionB    String
+  optionC    String
+  optionD    String
+  correctIdx Int    // 0=A, 1=B, 2=C, 3=D
+  category   String
+  difficulty String @default("medium") // easy, medium, hard
+}
+
+model TriviaSession {
+  id            String    @id @default(uuid())
+  roundId       Int
+  walletAddress String
+  questionIds   Int[]     // ordered question IDs for this session
+  answers       Int[]     // player's submitted answers (index per question)
+  currentQ      Int       @default(0)
+  score         Int       @default(0)
+  startedAt     DateTime  @default(now())
+  completedAt   DateTime?
+  proofHash     String?
+  submitted     Boolean   @default(false)
+
+  @@index([roundId])
+  @@index([walletAddress])
+}
+
+model LeaderboardEntry {
+  id            Int      @id @default(autoincrement())
+  game          String   // "word_duel" | "speed_trivia"
+  walletAddress String
+  wins          Int      @default(0)
+  totalEarned   BigInt   @default(0)
+  lastWinAt     DateTime?
+  lastUpdated   DateTime @default(now())
+
+  @@unique([game, walletAddress])
+  @@index([game, wins(sort: Desc)])
+}
+
+model DuelMatch {
+  id           Int      @id @default(autoincrement())
+  duelId       Int?     // on-chain duel ID once created
+  player1      String
+  player2      String?
+  entryFee     String   // stored as string for BigInt precision
+  tokenSymbol  String   @default("USDT")
+  tokenAddress String   @default("0x50c5771a74A317274967056fe675bb5344333063")
+  status       String   @default("queued") // queued, matched, committed, revealed, finalized
+  createdAt    DateTime @default(now())
+
+  @@index([status])
+  @@index([entryFee, tokenSymbol, status])
+}
+
+model DailyChallengePlay {
+  id            Int      @id @default(autoincrement())
+  walletAddress String
+  playedDate    String   // YYYY-MM-DD for unique checks
+  playedAt      DateTime @default(now())
+  score         Int
+  targetScore   Int
+  claimed       Boolean  @default(false)
+  rewardAmount  String   // e.g. "1.00" (USDT)
+  txHash        String?
+
+  @@unique([walletAddress, playedDate])
+}

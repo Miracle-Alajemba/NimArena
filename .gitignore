@@ -1,0 +1,21 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+*.log
+
+# Hardhat
+contracts/cache/
+contracts/artifacts/
+contracts/typechain-types/
+
+# Prisma
+backend/prisma/migrations/
+
+# Vite
+frontend/.vite/
+
+# OS
+.DS_Store
+Thumbs.db

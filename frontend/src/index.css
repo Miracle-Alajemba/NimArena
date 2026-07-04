@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0A0A0F;
+  --color-surface: #13131A;
+  --color-accent: #7C3AED;
+  --color-win: #10B981;
+  --color-loss: #EF4444;
+  --color-prize: #F59E0B;
+  --color-text: #F1F1F3;
+  --color-text-muted: #9CA3AF;
+  --color-border: #1F1F2E;
+
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+@layer base {
+  html, body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    margin: 0;
+    padding: 0;
+    min-width: 375px; /* Hard mobile constraint */
+    overflow-x: hidden;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: 800;
+  }
+
+  .mono-font {
+    font-family: var(--font-mono);
+  }
+
+  /* Custom glassmorphism classes */
+  .glass-card {
+    background: rgba(19, 19, 26, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+  }
+
+  .glass-card-hover {
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+
+  .glass-card-hover:active {
+    transform: scale(0.98);
+    background: rgba(19, 19, 26, 0.9);
+    border-color: rgba(124, 58, 237, 0.3);
+  }
+
+  /* Payout animation ripple */
+  .payout-ripple-container {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .payout-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.4) 0%, rgba(245, 158, 11, 0) 70%);
+    pointer-events: none;
+    width: 250px;
+    height: 250px;
+    top: 50%;
+    left: 50%;
+    margin-left: -125px;
+    margin-top: -125px;
+    transform: scale(0);
+    animation: usdt-ripple 1.2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+  }
+
+  /* Custom animated glow background */
+  .glow-bg {
+    position: relative;
+  }
+
+  .glow-bg::before {
+    content: "";
+    position: absolute;
+    top: -20%;
+    left: -20%;
+    width: 140%;
+    height: 140%;
+    background: radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, rgba(0, 0, 0, 0) 60%);
+    pointer-events: none;
+    z-index: -1;
+  }
+}
+
+@keyframes usdt-ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
