@@ -3,7 +3,7 @@ import { useNimiq } from "../../hooks/useNimiq";
 import { useUSDTBalance } from "../../hooks/useUSDTBalance";
 import { useNIMBalance } from "../../hooks/useNIMBalance";
 import { truncateAddress } from "../../lib/formatters";
-import { Wallet, Trophy } from "lucide-react";
+import { Wallet, Gamepad2 } from "lucide-react";
 
 export function Header() {
   const { walletAddress } = useNimiq();
@@ -12,14 +12,34 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between px-5 py-4 bg-[#13131A]/80 backdrop-blur-md border-b border-[#1F1F2E] shadow-lg">
-      {/* Brand logo */}
-      <div className="flex items-center gap-2">
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-tr from-[#7C3AED] to-[#A78BFA] shadow-md shadow-[#7C3AED]/30">
-          <Trophy className="w-4 h-4 text-white animate-pulse" />
+      {/* Brand logo / Gaming Arena Hub Logo */}
+      <div className="flex items-center gap-2.5 select-none">
+        {/* Arena Shield Emblem */}
+        <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-[#13131A] border-2 border-[#7C3AED]/80 shadow-[0_0_15px_rgba(124,58,237,0.3)] overflow-hidden">
+          {/* Neon background grid/lines */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#1F1F2E_1px,transparent_1px),linear-gradient(to_bottom,#1F1F2E_1px,transparent_1px)] bg-[size:5px_5px] opacity-45" />
+          
+          {/* Swirling arena energy rings */}
+          <div className="absolute inset-0 border border-t-[#A78BFA] border-r-transparent border-b-[#7C3AED] border-l-transparent rounded-full animate-spin duration-3000 opacity-60" />
+          
+          {/* Game Hub Icon */}
+          <Gamepad2 className="w-5 h-5 text-white z-10 drop-shadow-[0_0_4px_rgba(124,58,237,0.8)]" />
+          
+          {/* Orbiting Game Pips (representing multiple games living inside) */}
+          <span className="absolute top-1 left-1 w-1 h-1 rounded-full bg-[#10B981]" />
+          <span className="absolute bottom-1.5 right-1.5 w-1 h-1 rounded-full bg-[#F59E0B] animate-pulse" />
+          <span className="absolute top-1.5 right-1.5 w-1 h-1 rounded-full bg-[#EF4444]" />
         </div>
-        <span className="text-xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white to-[#F1F1F3] font-display">
-          NIM<span className="text-[#7C3AED]">ARENA</span>
-        </span>
+
+        {/* Text Logo with metallic & neon gaming gradient */}
+        <div className="flex flex-col">
+          <span className="text-sm font-extrabold tracking-[0.2em] bg-clip-text text-transparent bg-gradient-to-r from-white via-[#F3F4F6] to-gray-400 font-display uppercase leading-none">
+            NIM<span className="text-[#A78BFA]">ARENA</span>
+          </span>
+          <span className="text-[8px] font-bold text-gray-500 tracking-[0.3em] uppercase mt-1 leading-none">
+            GAME HUB
+          </span>
+        </div>
       </div>
 
       {/* Wallet info */}

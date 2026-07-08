@@ -55,7 +55,7 @@ export function GameGrid({ onSelectGame }: GameGridProps) {
   }, [get]);
 
   return (
-    <div className="grid grid-cols-2 gap-4 px-5 py-4 max-w-md mx-auto">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-5 py-4 w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto">
       {/* Word Duel Card */}
       <GameCard
         title="Word Duel"

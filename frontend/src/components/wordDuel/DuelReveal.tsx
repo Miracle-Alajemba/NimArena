@@ -118,7 +118,7 @@ export function DuelReveal({
   const isDraw = winnerIndex === 3;
 
   return (
-    <div className="pb-24 px-5 max-w-md mx-auto pt-4 text-center">
+    <div className="pb-24 px-5 w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto pt-4 text-center">
       {/* Title */}
       <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#7C3AED]/10 border border-[#7C3AED]/30 text-[#A78BFA] mb-6">
         <Flame className="w-8 h-8 animate-pulse text-[#7C3AED]" />

@@ -3,7 +3,8 @@ import { useApi } from "../../hooks/useApi";
 import { useContract } from "../../hooks/useContract";
 import { useNimiq } from "../../hooks/useNimiq";
 import { useUSDTBalance } from "../../hooks/useUSDTBalance";
-import { formatUSDT } from "../../lib/formatters";
+import { formatToken } from "../../lib/formatters";
+import { NIM_ADDRESS } from "../../config/constants";
 import { Plus, Users, Clock, Trophy, Play, CheckCircle } from "lucide-react";
 import { publicClient } from "../../lib/viemClient";
 import { CONTRACT_ADDRESS } from "../../config/constants";
@@ -38,6 +39,16 @@ export function TriviaLobby({ onStartTrivia }: TriviaLobbyProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [feeOption, setFeeOption] = useState<string>("0.5");
   const [duration, setDuration] = useState<number>(300); // 5 mins default
+
+  const [selectedCurrency, setSelectedCurrency] = useState<"USDT" | "NIM">("USDT");
+  const tokenAddress = selectedCurrency === "USDT" ? USDT_ADDRESS : NIM_ADDRESS;
+  const tokenDecimals = selectedCurrency === "USDT" ? 6 : 18;
+  const feeOptions = selectedCurrency === "USDT" ? ["0.5", "1.0", "2.0"] : ["50", "100", "200"];
+
+  useEffect(() => {
+    setFeeOption(selectedCurrency === "USDT" ? "0.5" : "50");
+  }, [selectedCurrency]);
+
 
   // Track entered rounds
   const [enteredRounds, setEnteredRounds] = useState<Record<number, boolean>>({});
@@ -105,9 +116,9 @@ export function TriviaLobby({ onStartTrivia }: TriviaLobbyProps) {
     return () => clearInterval(interval);
   }, [walletAddress]);
 
-  const handleEnterRound = async (roundId: number, fee: string) => {
+  const handleEnterRound = async (roundId: number, fee: string, tokenAddress: `0x${string}`) => {
     try {
-      const hash = await enterTrivia(roundId, fee);
+      const hash = await enterTrivia(roundId, fee, tokenAddress);
       if (hash) {
         setEnteredRounds((prev) => ({ ...prev, [roundId]: true }));
         refreshBalance();
@@ -120,7 +131,7 @@ export function TriviaLobby({ onStartTrivia }: TriviaLobbyProps) {
 
   const handleCreateRound = async () => {
     try {
-      const hash = await createTriviaRound(feeOption, duration);
+      const hash = await createTriviaRound(feeOption, duration, tokenAddress);
       if (hash) {
         setShowCreateModal(false);
         refreshBalance();
@@ -132,7 +143,7 @@ export function TriviaLobby({ onStartTrivia }: TriviaLobbyProps) {
   };
 
   return (
-    <div className="pb-24 px-5 max-w-md mx-auto pt-4">
+    <div className="pb-24 px-5 w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto pt-4">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-2">
@@ -152,6 +163,27 @@ export function TriviaLobby({ onStartTrivia }: TriviaLobbyProps) {
         </button>
       </div>
 
+      
+      {/* Currency selection */}
+      <div className="flex gap-2 mb-6 p-1 rounded-xl bg-[#1A1A24] border border-[#2B2B3D]">
+        <button
+          onClick={() => setSelectedCurrency("USDT")}
+          className={`flex-1 py-2 text-[10px] font-extrabold uppercase tracking-wider rounded-lg transition-all ${
+            selectedCurrency === "USDT" ? "bg-[#10B981] text-white" : "text-gray-400 hover:text-white"
+          }`}
+        >
+          USDT
+        </button>
+        <button
+          onClick={() => setSelectedCurrency("NIM")}
+          className={`flex-1 py-2 text-[10px] font-extrabold uppercase tracking-wider rounded-lg transition-all ${
+            selectedCurrency === "NIM" ? "bg-[#7C3AED] text-white" : "text-gray-400 hover:text-white"
+          }`}
+        >
+          NIM
+        </button>
+      </div>
+
       {/* Error alerts */}
       {txError && (
         <div className="p-3 mb-4 rounded-xl bg-[#EF4444]/15 border border-[#EF4444]/30 text-xs text-[#EF4444] font-bold">
@@ -161,12 +193,12 @@ export function TriviaLobby({ onStartTrivia }: TriviaLobbyProps) {
 
       {/* Rounds list */}
       <div className="flex flex-col gap-4">
-        {loading && rounds.length === 0 ? (
+        {loading && rounds.filter((r: any) => !r.tokenAddress || r.tokenAddress.toLowerCase() === tokenAddress.toLowerCase()).length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-gray-400 gap-3">
             <div className="w-8 h-8 rounded-full border-2 border-t-transparent border-[#7C3AED] animate-spin" />
             <span className="text-xs font-bold uppercase tracking-wider">Loading active rounds...</span>
           </div>
-        ) : rounds.length === 0 ? (
+        ) : rounds.filter((r: any) => !r.tokenAddress || r.tokenAddress.toLowerCase() === tokenAddress.toLowerCase()).length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-gray-500 gap-3 border border-[#1F1F2E] rounded-2xl bg-[#13131A]">
             <Trophy className="w-8 h-8 opacity-25" />
             <span className="text-xs font-bold uppercase tracking-wider text-center px-4">
@@ -174,7 +206,7 @@ export function TriviaLobby({ onStartTrivia }: TriviaLobbyProps) {
             </span>
           </div>
         ) : (
-          rounds.map((round) => {
+          rounds.filter((r: any) => !r.tokenAddress || r.tokenAddress.toLowerCase() === tokenAddress.toLowerCase()).map((round: any) => {
             const hasEntered = enteredRounds[round.roundId] || false;
             const timeLeftSec = Math.max(0, round.endTime - Math.floor(Date.now() / 1000));
             const formattedTime = timeLeftSec > 0
@@ -193,7 +225,7 @@ export function TriviaLobby({ onStartTrivia }: TriviaLobbyProps) {
                       Round #{round.roundId}
                     </span>
                     <h3 className="text-base font-extrabold text-white mt-0.5">
-                      Entry Fee: <span className="text-[#F59E0B] font-mono">{formatUSDT(round.entryFee)} USDT</span>
+                      Entry Fee: <span className="text-[#F59E0B] font-mono">{formatToken(round.entryFee, tokenDecimals)} {selectedCurrency}</span>
                     </h3>
                   </div>
                   
@@ -203,7 +235,7 @@ export function TriviaLobby({ onStartTrivia }: TriviaLobbyProps) {
                       Total prize pool
                     </span>
                     <div className="text-base font-extrabold text-[#10B981] font-mono">
-                      {formatUSDT(round.poolBalance)} USDT
+                      {formatToken(round.poolBalance, tokenDecimals)} {selectedCurrency}
                     </div>
                   </div>
                 </div>
@@ -239,7 +271,7 @@ export function TriviaLobby({ onStartTrivia }: TriviaLobbyProps) {
                   </button>
                 ) : (
                   <button
-                    onClick={() => handleEnterRound(round.roundId, round.entryFee)}
+                    onClick={() => handleEnterRound(round.roundId, round.entryFee, tokenAddress)}
                     disabled={txLoading}
                     style={{ minHeight: "44px" }}
                     className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#7C3AED] hover:bg-[#A78BFA] text-white text-xs font-bold uppercase transition-colors disabled:opacity-50"
@@ -268,10 +300,10 @@ export function TriviaLobby({ onStartTrivia }: TriviaLobbyProps) {
             {/* Fee Selector */}
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-extrabold uppercase text-gray-400 tracking-wider">
-                Entry Fee (USDT)
+                Entry Fee ({selectedCurrency})
               </label>
               <div className="flex gap-2">
-                {["0.5", "1.0", "2.0"].map((fee) => (
+                {feeOptions.map((fee) => (
                   <button
                     key={fee}
                     onClick={() => setFeeOption(fee)}
@@ -282,7 +314,7 @@ export function TriviaLobby({ onStartTrivia }: TriviaLobbyProps) {
                         : "bg-[#1A1A24] text-gray-300 border-[#2B2B3D]"
                     }`}
                   >
-                    {fee} USDT
+                    {fee} {selectedCurrency}
                   </button>
                 ))}
               </div>

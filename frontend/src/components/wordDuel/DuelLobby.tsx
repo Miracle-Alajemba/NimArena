@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useApi } from "../../hooks/useApi";
 import { useNimiq } from "../../hooks/useNimiq";
-import { formatUSDT } from "../../lib/formatters";
+import { formatToken } from "../../lib/formatters";
+import { USDT_ADDRESS, NIM_ADDRESS } from "../../config/constants";
 import { Gamepad2, ArrowRight, Flame, RefreshCw, Users, Key, CalendarDays, Timer, Sparkles } from "lucide-react";
 
 interface OpenDuel {
@@ -13,8 +14,8 @@ interface OpenDuel {
 }
 
 interface DuelLobbyProps {
-  onJoinQueue: (fee: string) => void;
-  onCreatePrivate: (fee: string) => void;
+  onJoinQueue: (fee: string, tokenAddress: string, tokenSymbol: string) => void;
+  onCreatePrivate: (fee: string, tokenAddress: string, tokenSymbol: string) => void;
   onJoinPrivate: (matchId: number) => void;
   onStartDaily: () => void;
   socketError: string | null;
@@ -40,6 +41,17 @@ export function DuelLobby({
 
   // Friend Tab States
   const [friendFee, setFriendFee] = useState<string>("0.5");
+
+  const [selectedCurrency, setSelectedCurrency] = useState<"USDT" | "NIM">("USDT");
+  const tokenAddress = selectedCurrency === "USDT" ? USDT_ADDRESS : NIM_ADDRESS;
+  const tokenDecimals = selectedCurrency === "USDT" ? 6 : 18;
+  const feeOptions = selectedCurrency === "USDT" ? ["0.5", "1.0", "2.0"] : ["50", "100", "200"];
+
+  useEffect(() => {
+    setSelectedFee(selectedCurrency === "USDT" ? "0.5" : "50");
+    setFriendFee(selectedCurrency === "USDT" ? "0.5" : "50");
+  }, [selectedCurrency]);
+
   const [roomCodeInput, setRoomCodeInput] = useState<string>("");
 
   // Daily Challenge Tab States
@@ -138,7 +150,7 @@ export function DuelLobby({
   };
 
   return (
-    <div className="pb-24 px-5 max-w-md mx-auto pt-4">
+    <div className="pb-24 px-5 w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto pt-4">
       {/* Title */}
       <div className="flex justify-between items-center mb-5">
         <div className="flex items-center gap-2">
@@ -208,10 +220,31 @@ export function DuelLobby({
             <h3 className="text-xs font-extrabold text-gray-400 uppercase tracking-wider mb-4">
               Quick Match Queue
             </h3>
+
+            {/* Currency selection */}
+            <div className="flex gap-2.5 mb-4 p-1 rounded-xl bg-[#1A1A24] border border-[#2B2B3D]">
+              <button
+                onClick={() => setSelectedCurrency("USDT")}
+                className={`flex-1 py-1.5 text-[10px] font-extrabold uppercase tracking-wider rounded-lg transition-all ${
+                  selectedCurrency === "USDT" ? "bg-[#10B981] text-white" : "text-gray-400 hover:text-white"
+                }`}
+              >
+                USDT
+              </button>
+              <button
+                onClick={() => setSelectedCurrency("NIM")}
+                className={`flex-1 py-1.5 text-[10px] font-extrabold uppercase tracking-wider rounded-lg transition-all ${
+                  selectedCurrency === "NIM" ? "bg-[#7C3AED] text-white" : "text-gray-400 hover:text-white"
+                }`}
+              >
+                NIM
+              </button>
+            </div>
+
             
             {/* Fee selection */}
             <div className="flex gap-2.5 mb-5">
-              {["0.5", "1.0", "2.0"].map((fee) => (
+              {feeOptions.map((fee) => (
                 <button
                   key={fee}
                   onClick={() => setSelectedFee(fee)}
@@ -222,14 +255,14 @@ export function DuelLobby({
                       : "bg-[#1A1A24] text-gray-400 border-[#2B2B3D] hover:border-gray-500"
                   }`}
                 >
-                  {fee} USDT
+                  {fee} {selectedCurrency}
                 </button>
               ))}
             </div>
 
             {/* Find opponent button */}
             <button
-              onClick={() => onJoinQueue(selectedFee)}
+              onClick={() => onJoinQueue(selectedFee, tokenAddress, selectedCurrency)}
               style={{ minHeight: "48px" }}
               className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#7C3AED] hover:bg-[#A78BFA] text-white text-xs font-extrabold uppercase transition-all duration-200"
             >
@@ -240,21 +273,21 @@ export function DuelLobby({
 
           {/* Active lobby queue list */}
           <h3 className="text-xs font-extrabold text-gray-500 uppercase tracking-wider mb-3">
-            Waiting Duels ({openDuels.length})
+            Waiting Duels ({openDuels.filter((d: any) => d.tokenSymbol === selectedCurrency).length})
           </h3>
 
           <div className="flex flex-col gap-3">
-            {loadingDuels && openDuels.length === 0 ? (
+            {loadingDuels && openDuels.filter((d: any) => d.tokenSymbol === selectedCurrency).length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 text-gray-400 gap-3">
                 <div className="w-6 h-6 border-2 border-t-transparent border-[#7C3AED] rounded-full animate-spin" />
                 <span className="text-[10px] font-bold uppercase tracking-wider">Polling active lobby...</span>
               </div>
-            ) : openDuels.length === 0 ? (
+            ) : openDuels.filter((d: any) => d.tokenSymbol === selectedCurrency).length === 0 ? (
               <div className="py-10 text-center text-xs text-gray-500 border border-[#1F1F2E] border-dashed rounded-xl bg-[#13131A]/30">
                 No open duels. Join the queue to host one!
               </div>
             ) : (
-              openDuels.map((duel) => (
+              openDuels.filter((d: any) => d.tokenSymbol === selectedCurrency).map((duel: any) => (
                 <div
                   key={duel.id}
                   className="flex items-center justify-between p-4 rounded-xl bg-[#13131A] border border-[#1F1F2E]"
@@ -264,13 +297,13 @@ export function DuelLobby({
                       Host: {duel.player1.slice(0, 6)}...{duel.player1.slice(-4)}
                     </span>
                     <span className="text-xs font-bold text-white mt-0.5">
-                      Fee: <span className="text-[#F59E0B] font-mono">{formatUSDT(duel.entryFee)} USDT</span>
+                      Fee: <span className="text-[#F59E0B] font-mono">{formatToken(duel.entryFee, tokenDecimals)} {selectedCurrency}</span>
                     </span>
                   </div>
 
                   {/* Accept Match */}
                   <button
-                    onClick={() => onJoinQueue(formatUSDT(duel.entryFee))}
+                    onClick={() => onJoinQueue(formatToken(duel.entryFee, tokenDecimals), tokenAddress, selectedCurrency)}
                     style={{ minHeight: "36px" }}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30 text-[#10B981] hover:bg-[#10B981] hover:text-white text-[10px] font-extrabold uppercase transition-all"
                   >
@@ -296,9 +329,30 @@ export function DuelLobby({
               Create a custom game room and send the code to your friend to play directly.
             </p>
 
+            {/* Currency selection */}
+            <div className="flex gap-2.5 mb-4 p-1 rounded-xl bg-[#1A1A24] border border-[#2B2B3D]">
+              <button
+                onClick={() => setSelectedCurrency("USDT")}
+                className={`flex-1 py-1.5 text-[10px] font-extrabold uppercase tracking-wider rounded-lg transition-all ${
+                  selectedCurrency === "USDT" ? "bg-[#10B981] text-white" : "text-gray-400 hover:text-white"
+                }`}
+              >
+                USDT
+              </button>
+              <button
+                onClick={() => setSelectedCurrency("NIM")}
+                className={`flex-1 py-1.5 text-[10px] font-extrabold uppercase tracking-wider rounded-lg transition-all ${
+                  selectedCurrency === "NIM" ? "bg-[#7C3AED] text-white" : "text-gray-400 hover:text-white"
+                }`}
+              >
+                NIM
+              </button>
+            </div>
+
+
             {/* Fee selection */}
             <div className="flex gap-2.5 mb-5">
-              {["0.5", "1.0", "2.0"].map((fee) => (
+              {feeOptions.map((fee) => (
                 <button
                   key={fee}
                   onClick={() => setFriendFee(fee)}
@@ -309,14 +363,14 @@ export function DuelLobby({
                       : "bg-[#1A1A24] text-gray-400 border-[#2B2B3D] hover:border-gray-500"
                   }`}
                 >
-                  {fee} USDT
+                  {fee} {selectedCurrency}
                 </button>
               ))}
             </div>
 
             {/* Host Private Room Button */}
             <button
-              onClick={() => onCreatePrivate(friendFee)}
+              onClick={() => onCreatePrivate(friendFee, tokenAddress, selectedCurrency)}
               style={{ minHeight: "48px" }}
               className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#7C3AED] hover:bg-[#A78BFA] text-white text-xs font-extrabold uppercase transition-all duration-200"
             >

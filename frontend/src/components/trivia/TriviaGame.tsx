@@ -162,7 +162,7 @@ export function TriviaGame({ roundId, entryFee, onComplete, onExit }: TriviaGame
   const progressPercent = (timeLeftMs / 30000) * 100;
 
   return (
-    <div className="pb-24 px-5 max-w-md mx-auto pt-6">
+    <div className="pb-24 px-5 w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto pt-6">
       {/* Upper Status Row */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex flex-col">

@@ -152,7 +152,7 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
 
   if (claimHash) {
     return (
-      <div className="pb-24 px-5 max-w-md mx-auto pt-10 text-center flex flex-col items-center">
+      <div className="pb-24 px-5 w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto pt-10 text-center flex flex-col items-center">
         <div className="w-20 h-20 rounded-full bg-[#10B981]/15 border border-[#10B981]/30 text-[#10B981] flex items-center justify-center mb-6 animate-bounce">
           <Award className="w-10 h-10" />
         </div>
@@ -194,7 +194,7 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
   const progressPercent = Math.min(100, (score / targetScore) * 100);
 
   return (
-    <div className="pb-24 px-5 max-w-md mx-auto pt-4 flex flex-col">
+    <div className="pb-24 px-5 w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto pt-4 flex flex-col">
       {/* Header back */}
       <button
         onClick={onExit}

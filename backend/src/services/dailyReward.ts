@@ -2,9 +2,10 @@ import { ethers } from "ethers";
 
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000";
 const RPC_URL = process.env.RPC_URL || "https://sepolia.base.org";
+const USDT_ADDRESS = process.env.USDT_ADDRESS || "0x0000000000000000000000000000000000000000";
 
 const abi = [
-  "function sendDailyReward(address player, uint256 amount) external"
+  "function sendDailyReward(address token, address player, uint256 amount) external"
 ];
 
 /**
@@ -38,8 +39,8 @@ export async function sendDailyRewardOnChain(
     // USDT uses 6 decimals
     const amountRaw = ethers.parseUnits(rewardAmountUSDT, 6);
 
-    console.log(`dailyRewardService: Dispatching sendDailyReward(${playerAddress}, ${rewardAmountUSDT} USDT) on-chain...`);
-    const tx = await contract.sendDailyReward(playerAddress, amountRaw);
+    console.log(`dailyRewardService: Dispatching sendDailyReward(${USDT_ADDRESS}, ${playerAddress}, ${rewardAmountUSDT} USDT) on-chain...`);
+    const tx = await contract.sendDailyReward(USDT_ADDRESS, playerAddress, amountRaw);
     console.log(`dailyRewardService: Sent tx. Hash: ${tx.hash}`);
 
     const receipt = await tx.wait(1);

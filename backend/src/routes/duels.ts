@@ -20,6 +20,8 @@ router.get("/open", async (req: Request, res: Response) => {
       id: d.id,
       player1: d.player1,
       entryFee: d.entryFee,
+      tokenSymbol: d.tokenSymbol,
+      tokenAddress: d.tokenAddress,
       status: d.status,
       createdAt: d.createdAt
     }));

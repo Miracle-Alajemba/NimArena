@@ -38,6 +38,7 @@ const getTriviaRoundAbi = {
   inputs: [{ name: "roundId", type: "uint256" }],
   outputs: [
     { name: "creator", type: "address" },
+    { name: "token", type: "address" },
     { name: "entryFee", type: "uint256" },
     { name: "startTime", type: "uint64" },
     { name: "endTime", type: "uint64" },
@@ -47,7 +48,7 @@ const getTriviaRoundAbi = {
     { name: "playerCount", type: "uint256" },
     { name: "finalized", type: "bool" },
   ],
-};
+} as const;
 
 // GET /api/trivia/rounds
 router.get("/rounds", async (req: Request, res: Response) => {
@@ -89,19 +90,20 @@ router.get("/rounds", async (req: Request, res: Response) => {
           abi: [getTriviaRoundAbi],
           functionName: "getTriviaRound",
           args: [BigInt(roundId)],
-        })) as any[];
+        } as any)) as any[];
 
         activeRounds.push({
           roundId,
           creator: roundData[0],
-          entryFee: roundData[1].toString(),
-          startTime: Number(roundData[2]),
-          endTime: Number(roundData[3]),
-          topScorer: roundData[4],
-          topScore: Number(roundData[5]),
-          poolBalance: roundData[6].toString(),
-          playerCount: Number(roundData[7]),
-          finalized: roundData[8],
+          tokenAddress: roundData[1],
+          entryFee: roundData[2].toString(),
+          startTime: Number(roundData[3]),
+          endTime: Number(roundData[4]),
+          topScorer: roundData[5],
+          topScore: Number(roundData[6]),
+          poolBalance: roundData[7].toString(),
+          playerCount: Number(roundData[8]),
+          finalized: roundData[9],
         });
       } catch (err) {
         console.error(`TriviaService: Failed to read round details for round ${roundId}:`, err);

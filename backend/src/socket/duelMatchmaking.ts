@@ -19,9 +19,9 @@ const activeMatches = new Map<number, MatchState>(); // dbMatchId -> MatchState
 
 export function registerDuelHandlers(io: Server, socket: Socket) {
   // Create private match (Play with Friend)
-  socket.on("duel:create_private", async (data: { entryFee: string; walletAddress: string }) => {
-    const { entryFee, walletAddress } = data;
-    if (!entryFee || !walletAddress) return;
+  socket.on("duel:create_private", async (data: { entryFee: string; walletAddress: string; tokenAddress: string; tokenSymbol: string }) => {
+    const { entryFee, walletAddress, tokenAddress, tokenSymbol } = data;
+    if (!entryFee || !walletAddress || !tokenAddress || !tokenSymbol) return;
 
     const userAddr = walletAddress.toLowerCase();
     activeSockets.set(userAddr, socket.id);
@@ -34,6 +34,8 @@ export function registerDuelHandlers(io: Server, socket: Socket) {
         data: {
           player1: userAddr,
           entryFee,
+          tokenAddress,
+          tokenSymbol,
           status: "private_queued"
         }
       });
@@ -103,6 +105,8 @@ export function registerDuelHandlers(io: Server, socket: Socket) {
           matchId: matched.id,
           opponent: matched.player2,
           entryFee: matched.entryFee,
+          tokenAddress: matched.tokenAddress,
+          tokenSymbol: matched.tokenSymbol,
           role: "player1"
         });
       }
@@ -111,6 +115,8 @@ export function registerDuelHandlers(io: Server, socket: Socket) {
           matchId: matched.id,
           opponent: matched.player1,
           entryFee: matched.entryFee,
+          tokenAddress: matched.tokenAddress,
+          tokenSymbol: matched.tokenSymbol,
           role: "player2"
         });
       }
@@ -121,9 +127,9 @@ export function registerDuelHandlers(io: Server, socket: Socket) {
   });
 
   // Client joins the queue
-  socket.on("duel:join_queue", async (data: { entryFee: string; walletAddress: string }) => {
-    const { entryFee, walletAddress } = data;
-    if (!entryFee || !walletAddress) return;
+  socket.on("duel:join_queue", async (data: { entryFee: string; walletAddress: string; tokenAddress: string; tokenSymbol: string }) => {
+    const { entryFee, walletAddress, tokenAddress, tokenSymbol } = data;
+    if (!entryFee || !walletAddress || !tokenAddress || !tokenSymbol) return;
 
     const userAddr = walletAddress.toLowerCase();
     activeSockets.set(userAddr, socket.id);
@@ -136,6 +142,7 @@ export function registerDuelHandlers(io: Server, socket: Socket) {
       const openMatch = await prisma.duelMatch.findFirst({
         where: {
           entryFee,
+          tokenAddress,
           status: "queued",
           player1: { not: userAddr } // Don't match with self
         },
@@ -171,6 +178,8 @@ export function registerDuelHandlers(io: Server, socket: Socket) {
             matchId: matched.id,
             opponent: matched.player2,
             entryFee: matched.entryFee,
+            tokenAddress: matched.tokenAddress,
+            tokenSymbol: matched.tokenSymbol,
             role: "player1"
           });
         }
@@ -179,6 +188,8 @@ export function registerDuelHandlers(io: Server, socket: Socket) {
             matchId: matched.id,
             opponent: matched.player1,
             entryFee: matched.entryFee,
+            tokenAddress: matched.tokenAddress,
+            tokenSymbol: matched.tokenSymbol,
             role: "player2"
           });
         }
@@ -189,6 +200,7 @@ export function registerDuelHandlers(io: Server, socket: Socket) {
           where: {
             player1: userAddr,
             entryFee,
+            tokenAddress,
             status: "queued"
           }
         });
@@ -198,6 +210,8 @@ export function registerDuelHandlers(io: Server, socket: Socket) {
             data: {
               player1: userAddr,
               entryFee,
+              tokenAddress,
+              tokenSymbol,
               status: "queued"
             }
           });

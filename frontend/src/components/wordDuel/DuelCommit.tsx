@@ -106,7 +106,7 @@ export function DuelCommit({ matchId, opponent, entryFee, role, onCommitted }: D
   };
 
   return (
-    <div className="pb-24 px-5 max-w-md mx-auto pt-4">
+    <div className="pb-24 px-5 w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto pt-4">
       {/* Duel header info */}
       <div className="flex justify-between items-center p-4 rounded-xl bg-[#13131A] border border-[#1F1F2E] mb-6">
         <div className="flex flex-col">

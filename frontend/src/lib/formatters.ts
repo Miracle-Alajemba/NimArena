@@ -10,19 +10,26 @@ export function truncateAddress(address: string | null | undefined): string {
 }
 
 /**
- * Formats a raw USDT amount (6 decimals) into a local readable string
+ * Formats a raw token amount based on decimals into a local readable string
  */
-export function formatUSDT(amountRaw: bigint | string | number | undefined): string {
+export function formatToken(amountRaw: bigint | string | number | undefined, decimals: number): string {
   if (amountRaw === undefined || amountRaw === null) return "0.00";
   
   try {
     const rawVal = BigInt(amountRaw.toString());
-    const formatted = Number(formatUnits(rawVal, 6));
+    const formatted = Number(formatUnits(rawVal, decimals));
     return formatted.toLocaleString(undefined, {
-      minimumFractionDigits: 2,
+      minimumFractionDigits: decimals === 18 ? 0 : 2,
       maximumFractionDigits: 2,
     });
   } catch (error) {
     return "0.00";
   }
+}
+
+/**
+ * Formats a raw USDT amount (6 decimals) into a local readable string
+ */
+export function formatUSDT(amountRaw: bigint | string | number | undefined): string {
+  return formatToken(amountRaw, 6);
 }

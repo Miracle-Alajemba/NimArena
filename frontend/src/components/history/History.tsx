@@ -264,7 +264,7 @@ export function History() {
   }, [walletAddress]);
 
   return (
-    <div className="pb-24 px-5 max-w-md mx-auto pt-4">
+    <div className="pb-24 px-5 w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto pt-4">
       {/* Title */}
       <div className="flex items-center gap-2 mb-5">
         <HistoryIcon className="w-5 h-5 text-[#7C3AED]" />

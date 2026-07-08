@@ -43,7 +43,7 @@ export function Leaderboard() {
   }, [game, period, walletAddress, get]);
 
   return (
-    <div className="pb-24 px-5 max-w-md mx-auto pt-4">
+    <div className="pb-24 px-5 w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto pt-4">
       {/* Tab Title */}
       <div className="flex items-center gap-2 mb-5">
         <Trophy className="w-5 h-5 text-[#F59E0B]" />

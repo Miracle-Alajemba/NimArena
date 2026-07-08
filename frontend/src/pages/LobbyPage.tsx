@@ -13,7 +13,7 @@ export function LobbyPage({ onSelectGame }: LobbyPageProps) {
       <Header />
 
       {/* Hero Welcome Info */}
-      <div className="text-center px-6 pt-8 pb-4 max-w-md mx-auto glow-bg">
+      <div className="text-center px-6 pt-8 pb-4 w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto glow-bg">
         <h1 className="text-2xl font-extrabold tracking-tight text-white font-display uppercase leading-tight">
           Battle for <span className="text-[#7C3AED]">USDT Stakes</span>
         </h1>

@@ -59,12 +59,13 @@ export function useDuelSocket() {
     });
 
     // Listen for match matchings
-    socket.on("duel:matched", (data: { matchId: number; opponent: string; entryFee: string; role: "player1" | "player2" }) => {
+    socket.on("duel:matched", (data: { matchId: number; opponent: string; entryFee: string; tokenAddress: string; tokenSymbol: string; role: "player1" | "player2" }) => {
       console.log("SocketClient: Matched with opponent:", data.opponent, "Match ID:", data.matchId);
       setMatchId(data.matchId);
       setOpponent(data.opponent);
       setRole(data.role);
       setEntryFee(data.entryFee);
+      // could setTokenAddress(data.tokenAddress) if needed
       setGameState("matched");
       setSocketError(null);
     });
@@ -95,7 +96,7 @@ export function useDuelSocket() {
   }, []);
 
   // Join matchmaking queue
-  const joinQueue = useCallback((fee: string) => {
+  const joinQueue = useCallback((fee: string, tokenAddress: string, tokenSymbol: string) => {
     if (!socketRef.current || !walletAddress) return;
     
     // Reset state
@@ -111,11 +112,13 @@ export function useDuelSocket() {
     socketRef.current.emit("duel:join_queue", {
       entryFee: fee,
       walletAddress: walletAddress.toLowerCase(),
+      tokenAddress,
+      tokenSymbol,
     });
   }, [walletAddress]);
 
   // Create private match
-  const createPrivateMatch = useCallback((fee: string) => {
+  const createPrivateMatch = useCallback((fee: string, tokenAddress: string, tokenSymbol: string) => {
     if (!socketRef.current || !walletAddress) return;
 
     setMatchId(null);
@@ -130,6 +133,8 @@ export function useDuelSocket() {
     socketRef.current.emit("duel:create_private", {
       entryFee: fee,
       walletAddress: walletAddress.toLowerCase(),
+      tokenAddress,
+      tokenSymbol,
     });
   }, [walletAddress]);
 

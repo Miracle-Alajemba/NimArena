@@ -11,7 +11,7 @@
   --color-text-muted: #9CA3AF;
   --color-border: #1F1F2E;
 
-  --font-display: 'Syne', sans-serif;
+  --font-display: 'Orbitron', sans-serif;
   --font-body: 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
@@ -19,6 +19,12 @@
 @layer base {
   html, body {
     background-color: var(--color-bg);
+    /* Gaming arena grid background */
+    background-image: radial-gradient(circle at 50% 50%, rgba(26, 21, 46, 0.4) 0%, rgba(10, 10, 15, 0.95) 80%),
+                      linear-gradient(rgba(31, 31, 46, 0.07) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(31, 31, 46, 0.07) 1px, transparent 1px);
+    background-size: 100% 100%, 24px 24px, 24px 24px;
+    background-attachment: fixed;
     color: var(--color-text);
     font-family: var(--font-body);
     margin: 0;

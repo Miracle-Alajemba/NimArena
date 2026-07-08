@@ -91,7 +91,7 @@ export function WordDuelPage({ onShowRipple, onExit }: WordDuelPageProps) {
           )}
 
           {gameState === "private_created" && matchId && (
-            <div className="pb-24 px-5 max-w-md mx-auto pt-16 text-center flex flex-col items-center">
+            <div className="pb-24 px-5 w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto pt-16 text-center flex flex-col items-center">
               <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#7C3AED]/10 border border-[#7C3AED]/30 text-[#A78BFA] mb-8">
                 <Key className="w-10 h-10 animate-pulse" />
               </div>

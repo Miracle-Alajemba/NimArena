@@ -151,26 +151,21 @@ export function useContract() {
     [walletAddress, ensureAllowance]
   );
 
-  // Helper to determine decimals
-  const getDecimals = (token: string) => {
-    return token.toLowerCase() === NIM_ADDRESS.toLowerCase() ? 18 : 6;
-  };
-
   // Word Duel writes
   const createDuel = useCallback(
-    async (token: `0x${string}`, entryFee: string, wordHash: `0x${string}`) => {
-      const decimals = getDecimals(token);
+    async (entryFee: string, tokenAddress: `0x${string}`, wordHash: `0x${string}`) => {
+      const decimals = tokenAddress.toLowerCase() === NIM_ADDRESS.toLowerCase() ? 18 : 6;
       const feeRaw = parseUnits(entryFee, decimals);
-      return writeContractMethod("createDuel", [token, feeRaw, wordHash], token, feeRaw);
+      return writeContractMethod("createDuel", [tokenAddress, feeRaw, wordHash], tokenAddress, feeRaw);
     },
     [writeContractMethod]
   );
 
   const joinDuel = useCallback(
-    async (duelId: number, token: `0x${string}`, entryFee: string, wordHash: `0x${string}`) => {
-      const decimals = getDecimals(token);
+    async (duelId: number, entryFee: string, tokenAddress: `0x${string}`, wordHash: `0x${string}`) => {
+      const decimals = tokenAddress.toLowerCase() === NIM_ADDRESS.toLowerCase() ? 18 : 6;
       const feeRaw = parseUnits(entryFee, decimals);
-      return writeContractMethod("joinDuel", [BigInt(duelId), wordHash], token, feeRaw);
+      return writeContractMethod("joinDuel", [BigInt(duelId), wordHash], tokenAddress, feeRaw);
     },
     [writeContractMethod]
   );
@@ -191,19 +186,19 @@ export function useContract() {
 
   // Speed Trivia writes
   const createTriviaRound = useCallback(
-    async (token: `0x${string}`, entryFee: string, durationSeconds: number) => {
-      const decimals = getDecimals(token);
+    async (entryFee: string, durationSeconds: number, tokenAddress: `0x${string}`) => {
+      const decimals = tokenAddress.toLowerCase() === NIM_ADDRESS.toLowerCase() ? 18 : 6;
       const feeRaw = parseUnits(entryFee, decimals);
-      return writeContractMethod("createTriviaRound", [token, feeRaw, BigInt(durationSeconds)]);
+      return writeContractMethod("createTriviaRound", [tokenAddress, feeRaw, BigInt(durationSeconds)], tokenAddress, feeRaw);
     },
     [writeContractMethod]
   );
 
   const enterTrivia = useCallback(
-    async (roundId: number, token: `0x${string}`, entryFee: string) => {
-      const decimals = getDecimals(token);
+    async (roundId: number, entryFee: string, tokenAddress: `0x${string}`) => {
+      const decimals = tokenAddress.toLowerCase() === NIM_ADDRESS.toLowerCase() ? 18 : 6;
       const feeRaw = parseUnits(entryFee, decimals);
-      return writeContractMethod("enterTrivia", [BigInt(roundId)], token, feeRaw);
+      return writeContractMethod("enterTrivia", [BigInt(roundId)], tokenAddress, feeRaw);
     },
     [writeContractMethod]
   );
@@ -239,7 +234,6 @@ export function useContract() {
 // helper to approve max values
 function ethersMaxApproveValue(tokenAddress: `0x${string}`, needed: bigint): bigint {
   const isNim = tokenAddress.toLowerCase() === NIM_ADDRESS.toLowerCase();
-  // Approve a high amount to avoid repeating approvals
   if (isNim) {
     const tenMillionNim = 10000000n * (10n ** 18n);
     return needed > tenMillionNim ? needed : tenMillionNim;
