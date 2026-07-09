@@ -7,7 +7,7 @@ import { formatToken } from "../../lib/formatters";
 import { NIM_ADDRESS } from "../../config/constants";
 import { Plus, Users, Clock, Trophy, Play, CheckCircle } from "lucide-react";
 import { publicClient } from "../../lib/viemClient";
-import { CONTRACT_ADDRESS } from "../../config/constants";
+import { CONTRACT_ADDRESS, USDT_ADDRESS } from "../../config/constants";
 
 interface TriviaRound {
   roundId: number;

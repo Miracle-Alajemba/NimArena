@@ -25,9 +25,12 @@ export function NimiqProvider({ children }: { children: ReactNode }) {
     async function initializeSdk() {
       try {
         console.log("NimiqSDK: Initializing Nimiq Mini App SDK...");
-        // 1. Wait for provider to be ready (catch error to allow normal web previews)
+        // 1. Wait for provider to be ready (catch error/timeout to allow normal web previews)
         try {
-          await init();
+          await Promise.race([
+            init(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("SDK init timeout")), 1500))
+          ]);
           console.log("NimiqSDK: SDK initialized successfully.");
         } catch (sdkErr) {
           console.warn("NimiqSDK: Running outside Nimiq Pay WebView. Bypassing SDK init.", sdkErr);
@@ -35,7 +38,10 @@ export function NimiqProvider({ children }: { children: ReactNode }) {
 
         // 2. Request device identifier (persistent across sessions)
         try {
-          const id = await requestDeviceIdentifier({ reason: "Player identity" });
+          const id = await Promise.race([
+            requestDeviceIdentifier({ reason: "Player identity" }),
+            new Promise<string>((_, reject) => setTimeout(() => reject(new Error("Device ID timeout")), 1500))
+          ]);
           console.log("NimiqSDK: Retrieved player ID:", id);
           setPlayerId(id);
         } catch (idErr) {
