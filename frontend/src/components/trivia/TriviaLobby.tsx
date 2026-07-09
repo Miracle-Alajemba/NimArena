@@ -26,7 +26,7 @@ interface TriviaLobbyProps {
   onStartTrivia: (roundId: number, entryFee: string) => void;
 }
 
-export function TriviaLobby({ onStartTrivia }: TriviaLobbyProps) {
+export function TriviaLobby({ onStartTrivia, onStartPractice }: TriviaLobbyProps) {
   const { get } = useApi();
   const { enterTrivia, createTriviaRound, txLoading, txError } = useContract();
   const { walletAddress } = useNimiq();

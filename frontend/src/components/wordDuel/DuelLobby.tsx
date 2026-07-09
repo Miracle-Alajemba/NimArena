@@ -18,6 +18,7 @@ interface DuelLobbyProps {
   onCreatePrivate: (fee: string, tokenAddress: string, tokenSymbol: string) => void;
   onJoinPrivate: (matchId: number) => void;
   onStartDaily: () => void;
+  onStartPractice: () => void;
   socketError: string | null;
 }
 

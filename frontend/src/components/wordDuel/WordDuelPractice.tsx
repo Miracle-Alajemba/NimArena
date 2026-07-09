@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Header } from "../components/layout/Header";
-import { useApi } from "../hooks/useApi";
+import { Header } from "../layout/Header";
+import { useApi } from "../../hooks/useApi";
 import { Loader2, Timer, Trophy, Zap, AlertCircle, Play, ArrowRight, Sword } from "lucide-react";
 
-interface PracticeArenaPageProps {
+interface WordDuelPracticeProps {
   onExit: () => void;
   onChallengeReal: () => void;
 }
 
-export function PracticeArenaPage({ onExit, onChallengeReal }: PracticeArenaPageProps) {
+export function WordDuelPractice({ onExit, onChallengeReal }: WordDuelPracticeProps) {
   const { validateWord } = useApi();
   
   // Game State
@@ -148,11 +148,8 @@ export function PracticeArenaPage({ onExit, onChallengeReal }: PracticeArenaPage
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0A0A0F] pb-24 text-white">
-      <Header onBack={onExit} />
-
-      <main className="flex-1 flex flex-col items-center justify-center p-6 max-w-md mx-auto w-full">
-        {!isPlaying && !isGameOver && (
+    <div className="w-full h-full flex flex-col items-center justify-center">
+      {!isPlaying && !isGameOver && (
           <div className="w-full bg-[#13131A] rounded-2xl p-8 border-2 border-[#10B981]/30 shadow-[0_0_30px_rgba(16,185,129,0.1)] text-center">
             <div className="w-16 h-16 mx-auto bg-[#10B981]/20 rounded-full flex items-center justify-center mb-4 border border-[#10B981]/50 shadow-[0_0_15px_rgba(16,185,129,0.4)]">
               <Zap className="w-8 h-8 text-[#10B981]" />
@@ -297,8 +294,6 @@ export function PracticeArenaPage({ onExit, onChallengeReal }: PracticeArenaPage
             </button>
           </div>
         )}
-      </main>
-
       {/* Inject custom shake keyframes if not present in global CSS */}
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes shake {

@@ -1,17 +1,19 @@
-with open('frontend/src/components/trivia/TriviaLobby.tsx', 'r') as f:
+import re
+
+with open('frontend/src/components/wordDuel/DuelLobby.tsx', 'r') as f:
     content = f.read()
 
 # Update Props
-content = content.replace('onStartTrivia: (roundId: number, fee: string) => void;', 'onStartTrivia: (roundId: number, fee: string) => void;\n  onStartPractice: () => void;')
+content = content.replace('onStartDaily: () => void;', 'onStartDaily: () => void;\n  onStartPractice: () => void;')
 
 # Update signature
-content = content.replace('{ onStartTrivia }: TriviaLobbyProps', '{ onStartTrivia, onStartPractice }: TriviaLobbyProps')
+content = content.replace('{ onJoinQueue, onCreatePrivate, onJoinPrivate, onStartDaily, socketError }: DuelLobbyProps', '{ onJoinQueue, onCreatePrivate, onJoinPrivate, onStartDaily, onStartPractice, socketError }: DuelLobbyProps')
 
-# Add Practice Button inside the main view
+# Add Practice Button above Daily Challenge
 practice_button = """      {/* Practice Mode */}
       <div 
         onClick={onStartPractice}
-        className="w-full relative overflow-hidden rounded-2xl bg-[#0A0A0F] border-2 border-[#10B981]/50 cursor-pointer group hover:border-[#10B981] transition-all mb-6 shadow-[0_0_15px_rgba(16,185,129,0.1)] hover:shadow-[0_0_25px_rgba(16,185,129,0.3)]"
+        className="w-full relative overflow-hidden rounded-2xl bg-[#0A0A0F] border-2 border-[#10B981]/50 cursor-pointer group hover:border-[#10B981] transition-all mb-4 shadow-[0_0_15px_rgba(16,185,129,0.1)] hover:shadow-[0_0_25px_rgba(16,185,129,0.3)]"
       >
         <div className="absolute top-0 right-0 px-3 py-1 bg-[#10B981]/20 text-[#10B981] text-[10px] font-bold rounded-bl-lg font-mono">
           FREE — No Wallet Needed
@@ -26,7 +28,7 @@ practice_button = """      {/* Practice Mode */}
               <h3 className="font-display font-extrabold text-white text-lg tracking-wide group-hover:text-[#10B981] transition-colors">
                 PRACTICE ARENA
               </h3>
-              <p className="text-[#10B981]/80 text-xs font-mono">Warm up your trivia skills</p>
+              <p className="text-[#10B981]/80 text-xs font-mono">Warm up your vocabulary</p>
             </div>
           </div>
           <div className="text-[#10B981]">
@@ -36,8 +38,8 @@ practice_button = """      {/* Practice Mode */}
       </div>
 """
 
-content = content.replace('{/* Live Rounds Status Header */}', practice_button + '\n      {/* Live Rounds Status Header */}')
+content = content.replace('{/* Daily Challenge Header */}', practice_button + '\n      {/* Daily Challenge Header */}')
 
-with open('frontend/src/components/trivia/TriviaLobby.tsx', 'w') as f:
+with open('frontend/src/components/wordDuel/DuelLobby.tsx', 'w') as f:
     f.write(content)
-print("Success: TriviaLobby.tsx updated")
+print("Success: DuelLobby.tsx updated")

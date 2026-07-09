@@ -3,6 +3,7 @@ import Header from "../components/layout/Header";
 import { TriviaLobby } from "../components/trivia/TriviaLobby";
 import { TriviaGame } from "../components/trivia/TriviaGame";
 import { TriviaResults } from "../components/trivia/TriviaResults";
+import { TriviaPractice } from "../components/trivia/TriviaPractice";
 
 interface SpeedTriviaPageProps {
   onShowRipple: () => void;

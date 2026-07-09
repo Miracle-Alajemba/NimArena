@@ -6,6 +6,7 @@ import { DuelMatchmaking } from "../components/wordDuel/DuelMatchmaking";
 import { DuelCommit } from "../components/wordDuel/DuelCommit";
 import { DuelReveal } from "../components/wordDuel/DuelReveal";
 import { DailyChallengeGame } from "../components/wordDuel/DailyChallengeGame";
+import { WordDuelPractice } from "../components/wordDuel/WordDuelPractice";
 import { Key } from "lucide-react";
 
 interface WordDuelPageProps {
@@ -37,6 +38,7 @@ export function WordDuelPage({ onShowRipple, onExit }: WordDuelPageProps) {
 
   // Daily challenge toggle state
   const [isDailyActive, setIsDailyActive] = useState<boolean>(false);
+  const [isPracticeActive, setIsPracticeActive] = useState<boolean>(false);
 
   const handleCommitted = (word: string, salt: `0x${string}`, chainId: number) => {
     setLocalWord(word);
@@ -73,6 +75,13 @@ export function WordDuelPage({ onShowRipple, onExit }: WordDuelPageProps) {
           onExit={handleDailyExit}
           onShowRipple={onShowRipple}
         />
+            ) : isPracticeActive ? (
+        <div className="flex-1 px-5 w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto pt-4">
+          <WordDuelPractice 
+            onExit={() => setIsPracticeActive(false)} 
+            onChallengeReal={() => setIsPracticeActive(false)} 
+          />
+        </div>
       ) : (
         <>
           {/* Subscreens according to WebSocket matchmaking state */}
@@ -82,6 +91,7 @@ export function WordDuelPage({ onShowRipple, onExit }: WordDuelPageProps) {
               onCreatePrivate={createPrivateMatch}
               onJoinPrivate={joinPrivateMatch}
               onStartDaily={() => setIsDailyActive(true)}
+              onStartPractice={() => setIsPracticeActive(true)}
               socketError={socketError}
             />
           )}
