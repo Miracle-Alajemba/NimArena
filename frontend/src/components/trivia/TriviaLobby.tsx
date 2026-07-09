@@ -34,7 +34,7 @@ export function TriviaLobby({ onStartTrivia, onStartPractice }: TriviaLobbyProps
 
   const [rounds, setRounds] = useState<TriviaRound[]>([]);
   const [loading, setLoading] = useState(false);
-  
+
   // Create Round Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [feeOption, setFeeOption] = useState<string>("0.5");
@@ -58,7 +58,7 @@ export function TriviaLobby({ onStartTrivia, onStartPractice }: TriviaLobbyProps
     try {
       const data = await get("/api/trivia/rounds");
       setRounds(data || []);
-      
+
       // Check entered status for each round on-chain
       if (walletAddress && CONTRACT_ADDRESS !== "0x0000000000000000000000000000000000000000") {
         const enteredStates: Record<number, boolean> = {};
@@ -152,7 +152,7 @@ export function TriviaLobby({ onStartTrivia, onStartPractice }: TriviaLobbyProps
             Speed Trivia
           </h2>
         </div>
-        
+
         {/* Create round button */}
         <button
           onClick={() => setShowCreateModal(true)}
@@ -164,14 +164,14 @@ export function TriviaLobby({ onStartTrivia, onStartPractice }: TriviaLobbyProps
       </div>
 
       {/* Practice Mode */}
-      <div 
+      <div
         onClick={onStartPractice}
         className="w-full relative overflow-hidden rounded-2xl bg-[#0A0A0F] border-2 border-[#10B981]/50 cursor-pointer group hover:border-[#10B981] transition-all mb-6 shadow-[0_0_15px_rgba(16,185,129,0.1)] hover:shadow-[0_0_25px_rgba(16,185,129,0.3)]"
       >
         <div className="absolute top-0 right-0 px-3 py-1 bg-[#10B981]/20 text-[#10B981] text-[10px] font-bold rounded-bl-lg font-mono">
           FREE — No Wallet Needed
         </div>
-        
+
         <div className="p-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#10B981]/20 flex items-center justify-center border border-[#10B981]/30">
@@ -185,26 +185,24 @@ export function TriviaLobby({ onStartTrivia, onStartPractice }: TriviaLobbyProps
             </div>
           </div>
           <div className="text-[#10B981]">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
           </div>
         </div>
       </div>
-      
+
       {/* Currency selection */}
       <div className="flex gap-2 mb-6 p-1 rounded-xl bg-[#1A1A24] border border-[#2B2B3D]">
         <button
           onClick={() => setSelectedCurrency("USDT")}
-          className={`flex-1 py-2 text-[10px] font-extrabold uppercase tracking-wider rounded-lg transition-all ${
-            selectedCurrency === "USDT" ? "bg-[#10B981] text-white" : "text-gray-400 hover:text-white"
-          }`}
+          className={`flex-1 py-2 text-[10px] font-extrabold uppercase tracking-wider rounded-lg transition-all ${selectedCurrency === "USDT" ? "bg-[#10B981] text-white" : "text-gray-400 hover:text-white"
+            }`}
         >
           USDT
         </button>
         <button
           onClick={() => setSelectedCurrency("NIM")}
-          className={`flex-1 py-2 text-[10px] font-extrabold uppercase tracking-wider rounded-lg transition-all ${
-            selectedCurrency === "NIM" ? "bg-[#7C3AED] text-white" : "text-gray-400 hover:text-white"
-          }`}
+          className={`flex-1 py-2 text-[10px] font-extrabold uppercase tracking-wider rounded-lg transition-all ${selectedCurrency === "NIM" ? "bg-[#7C3AED] text-white" : "text-gray-400 hover:text-white"
+            }`}
         >
           NIM
         </button>
@@ -228,7 +226,7 @@ export function TriviaLobby({ onStartTrivia, onStartPractice }: TriviaLobbyProps
           <div className="flex flex-col items-center justify-center py-16 text-gray-500 gap-3 border border-[#1F1F2E] rounded-2xl bg-[#13131A]">
             <Trophy className="w-8 h-8 opacity-25" />
             <span className="text-xs font-bold uppercase tracking-wider text-center px-4">
-              No active trivia rounds.<br/>Create one to start playing!
+              No active trivia rounds.<br />Create one to start playing!
             </span>
           </div>
         ) : (
@@ -254,7 +252,7 @@ export function TriviaLobby({ onStartTrivia, onStartPractice }: TriviaLobbyProps
                       Entry Fee: <span className="text-[#F59E0B] font-mono">{formatToken(round.entryFee, tokenDecimals)} {selectedCurrency}</span>
                     </h3>
                   </div>
-                  
+
                   {/* Total Pool */}
                   <div className="text-right">
                     <span className="text-[9px] font-extrabold uppercase text-gray-500 tracking-wider">
@@ -326,7 +324,7 @@ export function TriviaLobby({ onStartTrivia, onStartPractice }: TriviaLobbyProps
             <h3 className="text-lg font-extrabold text-white font-display uppercase tracking-wide">
               Create Trivia Round
             </h3>
-            
+
             {/* Fee Selector */}
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-extrabold uppercase text-gray-400 tracking-wider">
@@ -338,11 +336,10 @@ export function TriviaLobby({ onStartTrivia, onStartPractice }: TriviaLobbyProps
                     key={fee}
                     onClick={() => setFeeOption(fee)}
                     style={{ minHeight: "40px" }}
-                    className={`flex-1 rounded-xl text-xs font-bold font-mono transition-all border ${
-                      feeOption === fee
+                    className={`flex-1 rounded-xl text-xs font-bold font-mono transition-all border ${feeOption === fee
                         ? "bg-[#7C3AED] text-white border-[#7C3AED]"
                         : "bg-[#1A1A24] text-gray-300 border-[#2B2B3D]"
-                    }`}
+                      }`}
                   >
                     {fee} {selectedCurrency}
                   </button>
@@ -366,11 +363,10 @@ export function TriviaLobby({ onStartTrivia, onStartPractice }: TriviaLobbyProps
                     key={opt.value}
                     onClick={() => setDuration(opt.value)}
                     style={{ minHeight: "40px" }}
-                    className={`rounded-xl text-xs font-bold transition-all border ${
-                      duration === opt.value
+                    className={`rounded-xl text-xs font-bold transition-all border ${duration === opt.value
                         ? "bg-[#7C3AED] text-white border-[#7C3AED]"
                         : "bg-[#1A1A24] text-gray-300 border-[#2B2B3D]"
-                    }`}
+                      }`}
                   >
                     {opt.label}
                   </button>
