@@ -1,6 +1,7 @@
 import { Server, Socket } from "socket.io";
 import { PrismaClient } from "@prisma/client";
 import { isValidWord } from "../routes/words";
+import { ethers } from "ethers";
 
 const prisma = new PrismaClient();
 
@@ -243,7 +244,7 @@ export function registerDuelHandlers(io: Server, socket: Socket) {
     console.log(`Socket: Player ${userAddr} committed hash in Match ${matchId}`);
 
     // Update match state in DB if needed or query
-    prisma.duelMatch.findUnique({ where: { id: matchId } }).then((match) => {
+    prisma.duelMatch.findUnique({ where: { id: matchId } }).then(async (match) => {
       if (!match) return;
 
       if (userAddr === match.player1.toLowerCase()) {
@@ -281,7 +282,7 @@ export function registerDuelHandlers(io: Server, socket: Socket) {
 
     console.log(`Socket: Player ${userAddr} revealed word "${word}" in Match ${matchId}`);
 
-    prisma.duelMatch.findUnique({ where: { id: matchId } }).then((match) => {
+    prisma.duelMatch.findUnique({ where: { id: matchId } }).then(async (match) => {
       if (!match) return;
 
       if (userAddr === match.player1.toLowerCase()) {
@@ -304,19 +305,41 @@ export function registerDuelHandlers(io: Server, socket: Socket) {
         const v2 = isValidWord(w2);
 
         let winner: "player1" | "player2" | "draw" = "draw";
+        let winnerIndex = 3; // draw
 
         if (v1 && !v2) {
           winner = "player1";
+          winnerIndex = 1;
         } else if (!v1 && v2) {
           winner = "player2";
+          winnerIndex = 2;
         } else if (v1 && v2) {
           if (w1.length > w2.length) {
             winner = "player1";
+            winnerIndex = 1;
           } else if (w2.length > w1.length) {
             winner = "player2";
+            winnerIndex = 2;
           } else {
             winner = "draw";
+            winnerIndex = 3;
           }
+        }
+
+        // Generate backend signature for the contract
+        let signature = "0x";
+        try {
+          const privateKey = process.env.BACKEND_SIGNER_KEY;
+          if (privateKey && privateKey !== "0x_YOUR_BACKEND_SIGNER_PRIVATE_KEY_HERE") {
+             const wallet = new ethers.Wallet(privateKey);
+             const messageHash = ethers.solidityPackedKeccak256(
+               ["uint256", "uint8"],
+               [match.duelId, winnerIndex]
+             );
+             signature = await wallet.signMessage(ethers.getBytes(messageHash));
+          }
+        } catch(e) {
+          console.error("Failed to sign duel result:", e);
         }
 
         console.log(`Socket: Match ${matchId} Result prediction: ${winner} (Word 1: "${w1}" Valid: ${v1}, Word 2: "${w2}" Valid: ${v2})`);
@@ -331,7 +354,9 @@ export function registerDuelHandlers(io: Server, socket: Socket) {
           word1: w1,
           word2: w2,
           word1Valid: v1,
-          word2Valid: v2
+          word2Valid: v2,
+          signature,
+          winnerIndex
         };
 
         if (s1) io.to(s1).emit("duel:result", payload);

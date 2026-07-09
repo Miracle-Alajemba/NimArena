@@ -178,8 +178,15 @@ export function useContract() {
   );
 
   const finalizeDuel = useCallback(
-    async (duelId: number) => {
-      return writeContractMethod("finalizeDuel", [BigInt(duelId)]);
+    async (duelId: number, winnerIndex: number, signature: string) => {
+      return writeContractMethod("finalizeDuel", [BigInt(duelId), winnerIndex, signature]);
+    },
+    [writeContractMethod]
+  );
+
+  const finalizeTrivia = useCallback(
+    async (roundId: number) => {
+      return writeContractMethod("finalizeTrivia", [BigInt(roundId)]);
     },
     [writeContractMethod]
   );
@@ -217,6 +224,27 @@ export function useContract() {
     [writeContractMethod]
   );
 
+  
+  const finalizeTrivia = useCallback(async (roundId: number) => {
+    try {
+      setTxLoading(true);
+      setTxError(null);
+      const hash = await walletClient.writeContract({
+        address: CONTRACT_ADDRESS,
+        abi: NIM_ARENA_ABI,
+        functionName: "finalizeTrivia",
+        args: [BigInt(roundId)],
+      });
+      await publicClient.waitForTransactionReceipt({ hash });
+      return hash;
+    } catch (err: any) {
+      setTxError(err.shortMessage || err.message || "Failed to finalize trivia");
+      return null;
+    } finally {
+      setTxLoading(false);
+    }
+  }, []);
+
   return {
     txLoading,
     txError,
@@ -226,6 +254,8 @@ export function useContract() {
     finalizeDuel,
     createTriviaRound,
     enterTrivia,
+    finalizeTrivia,
+    finalizeTrivia,
     submitTriviaScore,
     finalizeTrivia,
   };

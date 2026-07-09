@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { GameCard } from "./GameCard";
 import { Gamepad2, Award, Zap, Hash, Smile } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
+import { USDT_ADDRESS } from "../../config/constants";
+import { formatToken } from "../../lib/formatters";
 
 interface GameGridProps {
   onSelectGame: (game: "word_duel" | "speed_trivia") => void;
@@ -22,28 +24,46 @@ export function GameGrid({ onSelectGame }: GameGridProps) {
         setOpenDuelsCount(duels.length);
         
         // Calculate duel prize pool (sum of fee * 2 for queued matches)
-        let totalDuelPrize = 0;
+        let totalDuelUSDT = 0;
+        let totalDuelNIM = 0;
         for (const d of duels) {
-          const entryVal = parseFloat(d.entryFee);
-          if (!isNaN(entryVal)) {
-            totalDuelPrize += entryVal * 2;
+          if (d.tokenAddress && d.tokenAddress.toLowerCase() === USDT_ADDRESS.toLowerCase()) {
+            const entryVal = parseFloat(formatToken(d.entryFee, 6));
+            if (!isNaN(entryVal)) totalDuelUSDT += entryVal * 2;
+          } else {
+            const entryVal = parseFloat(formatToken(d.entryFee, 18));
+            if (!isNaN(entryVal)) totalDuelNIM += entryVal * 2;
           }
         }
-        setDuelPrizePool(totalDuelPrize.toFixed(2));
+        
+        let duelPrizeStr = "";
+        if (totalDuelUSDT > 0) duelPrizeStr += `${totalDuelUSDT.toFixed(2)} USDT Pot `;
+        if (totalDuelNIM > 0) duelPrizeStr += `${totalDuelNIM.toFixed(2)} NIM Pot`;
+        if (!duelPrizeStr) duelPrizeStr = "0.00 USDT Pot";
+        setDuelPrizePool(duelPrizeStr.trim());
 
         // Fetch active trivia rounds from backend
         const rounds = await get("/api/trivia/rounds");
         setActiveRoundsCount(rounds.length);
 
         // Calculate total trivia prize pools
-        let totalTriviaPrize = 0;
+        let totalTriviaUSDT = 0;
+        let totalTriviaNIM = 0;
         for (const r of rounds) {
-          const poolVal = parseFloat(r.poolBalance);
-          if (!isNaN(poolVal)) {
-            totalTriviaPrize += poolVal;
+          if (r.tokenAddress && r.tokenAddress.toLowerCase() === USDT_ADDRESS.toLowerCase()) {
+            const poolVal = parseFloat(formatToken(r.poolBalance, 6));
+            if (!isNaN(poolVal)) totalTriviaUSDT += poolVal;
+          } else {
+            const poolVal = parseFloat(formatToken(r.poolBalance, 18));
+            if (!isNaN(poolVal)) totalTriviaNIM += poolVal;
           }
         }
-        setTriviaPrizePool(totalTriviaPrize.toFixed(2));
+        
+        let triviaPrizeStr = "";
+        if (totalTriviaUSDT > 0) triviaPrizeStr += `${totalTriviaUSDT.toFixed(2)} USDT Pot `;
+        if (totalTriviaNIM > 0) triviaPrizeStr += `${totalTriviaNIM.toFixed(2)} NIM Pot`;
+        if (!triviaPrizeStr) triviaPrizeStr = "0.00 USDT Pot";
+        setTriviaPrizePool(triviaPrizeStr.trim());
       } catch (err) {
         console.warn("LobbyStats: Failed to fetch active stats from backend.", err);
       }
@@ -61,7 +81,7 @@ export function GameGrid({ onSelectGame }: GameGridProps) {
         title="Word Duel"
         description="Fast 1v1 word commit-reveal battle. Longer word wins the pool."
         status="live"
-        details={`${openDuelsCount} open • ${duelPrizePool} USDT Pot`}
+        details={`${openDuelsCount} open • ${duelPrizePool}`}
         onClick={() => onSelectGame("word_duel")}
         icon={<Gamepad2 className="w-5 h-5" />}
       />
@@ -71,7 +91,7 @@ export function GameGrid({ onSelectGame }: GameGridProps) {
         title="Speed Trivia"
         description="10-question rapid multiple choice test. High scorer takes pool."
         status="live"
-        details={`${activeRoundsCount} rounds • ${triviaPrizePool} USDT`}
+        details={`${activeRoundsCount} rounds • ${triviaPrizePool}`}
         onClick={() => onSelectGame("speed_trivia")}
         icon={<Award className="w-5 h-5" />}
       />

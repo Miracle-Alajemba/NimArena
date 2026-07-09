@@ -4,6 +4,15 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { NimArena, MockERC20 } from "../typechain-types";
 
 describe("NimArena Contract", function () {
+
+    async function signDuelResult(duelId: number, winnerIndex: number): Promise<string> {
+        const messageHash = ethers.solidityPackedKeccak256(
+            ["uint256", "uint8"],
+            [duelId, winnerIndex]
+        );
+        return backendSigner.signMessage(ethers.getBytes(messageHash));
+    }
+
   let arena: NimArena;
   let usdt: MockERC20;
   let nim: MockERC20;
@@ -132,7 +141,7 @@ describe("NimArena Contract", function () {
       const expectedPrize = ethers.parseUnits("19", 6);
       const expectedFee = ethers.parseUnits("1", 6);
 
-      await expect(arena.finalizeDuel(1))
+      await expect(arena.finalizeDuel(1, 1, await signDuelResult(1, 1)))
         .to.emit(arena, "DuelFinalized")
         .withArgs(1, player1.address, expectedPrize);
 
@@ -171,7 +180,7 @@ describe("NimArena Contract", function () {
       const expectedRefund = ethers.parseUnits("9.5", 6);
       const expectedFee = ethers.parseUnits("1", 6); // 5% of 20 pot
 
-      await arena.finalizeDuel(1);
+      await arena.finalizeDuel(1, 3, await signDuelResult(1, 3));
 
       expect(await usdt.balanceOf(player1.address) - initialBalP1).to.equal(expectedRefund);
       expect(await usdt.balanceOf(player2.address) - initialBalP2).to.equal(expectedRefund);
@@ -313,14 +322,14 @@ describe("NimArena Contract", function () {
   });
 
   describe("Daily Challenge & Withdrawals", function () {
-    it("should allow owner to send daily rewards from contract funds", async function () {
+    it("should allow backend to send daily rewards from contract funds", async function () {
       const rewardAmount = ethers.parseUnits("1.5", 6);
       
       await usdt.connect(player1).transfer(await arena.getAddress(), ethers.parseUnits("10", 6));
       
       const initialBal = await usdt.balanceOf(player2.address);
       
-      await expect(arena.connect(owner).sendDailyReward(await usdt.getAddress(), player2.address, rewardAmount))
+      await expect(arena.connect(backendSigner).sendDailyReward(await usdt.getAddress(), player2.address, rewardAmount))
         .to.emit(arena, "DailyRewardSent")
         .withArgs(await usdt.getAddress(), player2.address, rewardAmount);
         
@@ -328,11 +337,11 @@ describe("NimArena Contract", function () {
       expect(finalBal - initialBal).to.equal(rewardAmount);
     });
 
-    it("should reject daily rewards sent by non-owner", async function () {
+    it("should reject daily rewards sent by non-backend", async function () {
       const rewardAmount = ethers.parseUnits("1.5", 6);
       await expect(
         arena.connect(player1).sendDailyReward(await usdt.getAddress(), player2.address, rewardAmount)
-      ).to.be.revertedWith("NimArena: owner only");
+      ).to.be.revertedWith("NimArena: only backend can send daily reward");
     });
 
     it("should allow owner to withdraw accumulated funds", async function () {
@@ -381,7 +390,7 @@ describe("NimArena Contract", function () {
       const expectedPrize = ethers.parseUnits("95", 18);
       const expectedFee = ethers.parseUnits("5", 18);
 
-      await expect(arena.finalizeDuel(1))
+      await expect(arena.finalizeDuel(1, 1, await signDuelResult(1, 1)))
         .to.emit(arena, "DuelFinalized")
         .withArgs(1, player1.address, expectedPrize);
 

@@ -1,3 +1,4 @@
+import { ethers } from "ethers";
 import { createPublicClient, http, parseAbiItem, Log } from "viem";
 import { base, baseSepolia } from "viem/chains";
 import { PrismaClient } from "@prisma/client";
@@ -136,10 +137,61 @@ async function updateLeaderboard(game: "word_duel" | "speed_trivia", player: str
 /**
  * Starts event listener polling loop
  */
+
+/**
+ * Polls for expired trivia rounds and finalizes them using the backend signer.
+ */
+async function pollExpiredTriviaRounds() {
+  try {
+    const privateKey = process.env.BACKEND_SIGNER_KEY;
+    if (!privateKey || privateKey === "0x_YOUR_BACKEND_SIGNER_PRIVATE_KEY_HERE") return;
+    
+    if (CONTRACT_ADDRESS === "0x0000000000000000000000000000000000000000") return;
+
+    const provider = new ethers.JsonRpcProvider(BASE_RPC_URL);
+    const wallet = new ethers.Wallet(privateKey, provider);
+    
+    // We only need the finalizeTrivia abi and a way to read rounds
+    const abi = [
+      "function finalizeTrivia(uint256 roundId) external",
+      "function getTriviaRound(uint256 roundId) external view returns (address, uint256, uint64, uint64, address, uint256, uint256, uint256, bool)",
+      "function nextTriviaRoundId() external view returns (uint256)"
+    ];
+    
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, abi, wallet);
+    
+    const maxRoundId = await contract.nextTriviaRoundId();
+    if (!maxRoundId) return;
+
+    const currentTs = Math.floor(Date.now() / 1000);
+    
+    for (let i = 1; i < Number(maxRoundId); i++) {
+      try {
+        const round = await contract.getTriviaRound(i);
+        const endTime = Number(round[3]);
+        const finalized = round[8];
+        
+        // If expired and not finalized, call finalizeTrivia
+        if (endTime > 0 && currentTs > endTime && !finalized) {
+          console.log(`EventSync: Found expired unfinalized trivia round ${i}. Finalizing...`);
+          const tx = await contract.finalizeTrivia(i);
+          await tx.wait(1);
+          console.log(`EventSync: Finalized trivia round ${i} successfully. Hash: ${tx.hash}`);
+        }
+      } catch (err) {
+        // Skip errors for individual rounds
+      }
+    }
+  } catch (error) {
+    console.error("EventSync: Error polling expired trivia rounds:", error);
+  }
+}
+
 export function startEventSyncService() {
   console.log("EventSync: Starting periodic on-chain event syncer...");
   // Sync immediately
   syncOnChainEvents();
   // Poll every 30 seconds
   setInterval(syncOnChainEvents, 30_000);
+  setInterval(pollExpiredTriviaRounds, 60_000);
 }

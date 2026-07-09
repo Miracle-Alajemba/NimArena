@@ -252,14 +252,18 @@ export function TriviaLobby({ onStartTrivia }: TriviaLobbyProps) {
                   </div>
                 </div>
 
-                {/* Enter / Play Actions */}
                 {timeLeftSec === 0 ? (
                   <button
-                    disabled
+                    onClick={async () => {
+                      if (txLoading) return;
+                      await finalizeTrivia(round.roundId);
+                      fetchRounds();
+                    }}
+                    disabled={txLoading}
                     style={{ minHeight: "44px" }}
-                    className="w-full rounded-xl bg-gray-800 text-gray-500 text-xs font-bold uppercase cursor-not-allowed"
+                    className="w-full rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-white text-xs font-bold uppercase transition-colors"
                   >
-                    Round Expired
+                    {txLoading ? "Finalizing..." : "End Round & Distribute Pot"}
                   </button>
                 ) : hasEntered ? (
                   <button

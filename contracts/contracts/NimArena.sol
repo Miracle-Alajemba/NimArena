@@ -176,7 +176,7 @@ contract NimArena is ReentrancyGuard {
         emit WordRevealed(duelId, msg.sender, word);
     }
 
-    function finalizeDuel(uint256 duelId) external nonReentrant {
+    function finalizeDuel(uint256 duelId, uint8 backendWinnerIndex, bytes calldata signature) external nonReentrant {
         Duel storage d = duels[duelId];
         require(!d.finalized, "NimArena: already finalized");
         require(
@@ -184,23 +184,18 @@ contract NimArena is ReentrancyGuard {
             "NimArena: both must reveal"
         );
 
+        // Verify Backend Signature
+        bytes32 messageHash = keccak256(abi.encodePacked(duelId, backendWinnerIndex));
+        bytes32 ethSignedHash = messageHash.toEthSignedMessageHash();
+        require(ethSignedHash.recover(signature) == backendSigner, "NimArena: invalid backend signature");
+
         d.finalized = true;
+        d.winner = backendWinnerIndex;
         uint256 totalPot = d.entryFee * 2;
         uint256 fee = (totalPot * PLATFORM_FEE_BPS) / BPS_DENOMINATOR;
         uint256 prize = totalPot - fee;
 
-        uint256 len1 = bytes(d.word1Revealed).length;
-        uint256 len2 = bytes(d.word2Revealed).length;
-
-        address winner;
-        if (len1 > len2) {
-            d.winner = 1;
-            winner = d.player1;
-        } else if (len2 > len1) {
-            d.winner = 2;
-            winner = d.player2;
-        } else {
-            d.winner = 3;
+        if (d.winner == 3) { // Draw
             uint256 halfFee = fee / 2;
             uint256 refund1 = d.entryFee - halfFee;
             uint256 refund2 = d.entryFee - (fee - halfFee);
@@ -213,10 +208,11 @@ contract NimArena is ReentrancyGuard {
             return;
         }
 
+        address winnerAddr = (d.winner == 1) ? d.player1 : d.player2;
         IERC20(d.token).safeTransfer(platformFeeAddress, fee);
-        IERC20(d.token).safeTransfer(winner, prize);
+        IERC20(d.token).safeTransfer(winnerAddr, prize);
 
-        emit DuelFinalized(duelId, winner, prize);
+        emit DuelFinalized(duelId, winnerAddr, prize);
     }
 
     function cancelDuel(uint256 duelId) external nonReentrant {
@@ -378,7 +374,8 @@ contract NimArena is ReentrancyGuard {
         address token,
         address player,
         uint256 amount
-    ) external onlyOwner nonReentrant {
+    ) external nonReentrant {
+        require(msg.sender == backendSigner, "NimArena: only backend can send daily reward");
         require(token == address(usdt) || token == address(nim), "NimArena: unsupported token");
         require(player != address(0), "NimArena: invalid address");
         require(amount > 0, "NimArena: amount required");

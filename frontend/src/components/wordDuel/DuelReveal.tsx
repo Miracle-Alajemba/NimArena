@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useContract } from "../../hooks/useContract";
 import { useUSDTBalance } from "../../hooks/useUSDTBalance";
@@ -99,8 +100,12 @@ export function DuelReveal({
   };
 
   const handleFinalize = async () => {
+    if (!duelResult || !duelResult.signature) {
+      console.error("DuelReveal: Missing backend signature");
+      return;
+    }
     try {
-      const hash = await finalizeDuel(chainDuelId);
+      const hash = await finalizeDuel(chainDuelId, duelResult.winnerIndex, duelResult.signature);
       if (hash) {
         setIsFinalized(true);
         onShowRipple(); // Trigger USDT ripple payout animation
