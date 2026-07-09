@@ -163,6 +163,32 @@ export function TriviaLobby({ onStartTrivia, onStartPractice }: TriviaLobbyProps
         </button>
       </div>
 
+      {/* Practice Mode */}
+      <div 
+        onClick={onStartPractice}
+        className="w-full relative overflow-hidden rounded-2xl bg-[#0A0A0F] border-2 border-[#10B981]/50 cursor-pointer group hover:border-[#10B981] transition-all mb-6 shadow-[0_0_15px_rgba(16,185,129,0.1)] hover:shadow-[0_0_25px_rgba(16,185,129,0.3)]"
+      >
+        <div className="absolute top-0 right-0 px-3 py-1 bg-[#10B981]/20 text-[#10B981] text-[10px] font-bold rounded-bl-lg font-mono">
+          FREE — No Wallet Needed
+        </div>
+        
+        <div className="p-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#10B981]/20 flex items-center justify-center border border-[#10B981]/30">
+              <span className="text-xl">🎯</span>
+            </div>
+            <div>
+              <h3 className="font-display font-extrabold text-white text-lg tracking-wide group-hover:text-[#10B981] transition-colors">
+                PRACTICE ARENA
+              </h3>
+              <p className="text-[#10B981]/80 text-xs font-mono">Warm up your trivia skills</p>
+            </div>
+          </div>
+          <div className="text-[#10B981]">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </div>
+        </div>
+      </div>
       
       {/* Currency selection */}
       <div className="flex gap-2 mb-6 p-1 rounded-xl bg-[#1A1A24] border border-[#2B2B3D]">
