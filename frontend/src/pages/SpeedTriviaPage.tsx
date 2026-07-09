@@ -39,7 +39,7 @@ export function SpeedTriviaPage({ onShowRipple, onExit }: SpeedTriviaPageProps) 
   return (
     <div className="flex flex-col min-h-screen bg-[#0A0A0F] pb-24 text-white">
       {/* Header */}
-      <Header />
+      <Header onBack={onExit} />
 
       {screen === "lobby" && (
         <TriviaLobby onStartTrivia={handleStartTrivia} />

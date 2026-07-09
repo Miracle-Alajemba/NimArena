@@ -66,7 +66,7 @@ export function useContract() {
         // 2. Request approve transaction
         console.log(`ContractService: Approving ${amountRaw.toString()} ${symbol}...`);
         const maxVal = ethersMaxApproveValue(tokenAddress, amountRaw);
-        
+
         const hash = await walletClient.writeContract({
           address: tokenAddress,
           abi: erc20Abi,
@@ -77,11 +77,11 @@ export function useContract() {
         } as any);
 
         console.log(`ContractService: ${symbol} Approval tx sent. Hash:`, hash);
-        
+
         // Wait for tx confirmation
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
         console.log(`ContractService: ${symbol} Approval confirmed. Receipt:`, receipt.status);
-        
+
         setTxLoading(false);
         return receipt.status === "success";
       } catch (err: any) {
@@ -217,33 +217,7 @@ export function useContract() {
     [writeContractMethod]
   );
 
-  const finalizeTrivia = useCallback(
-    async (roundId: number) => {
-      return writeContractMethod("finalizeTrivia", [BigInt(roundId)]);
-    },
-    [writeContractMethod]
-  );
 
-  
-  const finalizeTrivia = useCallback(async (roundId: number) => {
-    try {
-      setTxLoading(true);
-      setTxError(null);
-      const hash = await walletClient.writeContract({
-        address: CONTRACT_ADDRESS,
-        abi: NIM_ARENA_ABI,
-        functionName: "finalizeTrivia",
-        args: [BigInt(roundId)],
-      });
-      await publicClient.waitForTransactionReceipt({ hash });
-      return hash;
-    } catch (err: any) {
-      setTxError(err.shortMessage || err.message || "Failed to finalize trivia");
-      return null;
-    } finally {
-      setTxLoading(false);
-    }
-  }, []);
 
   return {
     txLoading,

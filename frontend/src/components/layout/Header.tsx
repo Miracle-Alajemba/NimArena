@@ -5,7 +5,11 @@ import { useNIMBalance } from "../../hooks/useNIMBalance";
 import { truncateAddress } from "../../lib/formatters";
 import { Wallet, Gamepad2 } from "lucide-react";
 
-export function Header() {
+interface HeaderProps {
+  onBack?: () => void;
+}
+
+export function Header({ onBack }: HeaderProps) {
   const { walletAddress } = useNimiq();
   const { balance: usdtBalance } = useUSDTBalance();
   const { balance: nimBalance } = useNIMBalance();
@@ -13,7 +17,10 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between px-5 py-4 bg-[#13131A]/80 backdrop-blur-md border-b border-[#1F1F2E] shadow-lg">
       {/* Brand logo / Gaming Arena Hub Logo */}
-      <div className="flex items-center gap-2.5 select-none">
+      <div 
+        className={`flex items-center gap-2.5 select-none ${onBack ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+        onClick={onBack}
+      >
         {/* Arena Shield Emblem */}
         <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-[#13131A] border-2 border-[#7C3AED]/80 shadow-[0_0_15px_rgba(124,58,237,0.3)] overflow-hidden">
           {/* Neon background grid/lines */}

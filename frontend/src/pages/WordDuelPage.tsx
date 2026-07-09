@@ -64,7 +64,7 @@ export function WordDuelPage({ onShowRipple, onExit }: WordDuelPageProps) {
   return (
     <div className="flex flex-col min-h-screen bg-[#0A0A0F] pb-24 text-white">
       {/* Header */}
-      <Header />
+      <Header onBack={onExit} />
 
       {/* Daily Challenge Active View */}
       {isDailyActive ? (

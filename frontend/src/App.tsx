@@ -5,11 +5,12 @@ import { WordDuelPage } from "./pages/WordDuelPage";
 import { SpeedTriviaPage } from "./pages/SpeedTriviaPage";
 import { LeaderboardPage } from "./pages/LeaderboardPage";
 import { HistoryPage } from "./pages/HistoryPage";
+import { PracticeArenaPage } from "./pages/PracticeArenaPage";
 import { BottomNav, ActiveTab } from "./components/layout/BottomNav";
 import { USDTRipple } from "./components/layout/USDTRipple";
 import { AlertCircle } from "lucide-react";
 
-type ViewState = "lobby" | "leaderboard" | "history" | "game_word_duel" | "game_trivia";
+type ViewState = "lobby" | "leaderboard" | "history" | "game_word_duel" | "game_trivia" | "practice_arena";
 
 function AppContent() {
   const { isReady, error } = useNimiq();
@@ -18,15 +19,17 @@ function AppContent() {
 
   // Tab mapper for navigation
   const activeTab: ActiveTab = 
-    view === "game_word_duel" || view === "game_trivia" || view === "lobby"
+    view === "game_word_duel" || view === "game_trivia" || view === "practice_arena" || view === "lobby"
       ? "lobby"
       : (view as ActiveTab);
 
-  const handleSelectGame = (game: "word_duel" | "speed_trivia") => {
+  const handleSelectGame = (game: "word_duel" | "speed_trivia" | "practice_arena") => {
     if (game === "word_duel") {
       setView("game_word_duel");
-    } else {
+    } else if (game === "speed_trivia") {
       setView("game_trivia");
+    } else if (game === "practice_arena") {
+      setView("practice_arena");
     }
   };
 

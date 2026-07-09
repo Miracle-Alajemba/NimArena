@@ -6,7 +6,7 @@ import { USDT_ADDRESS } from "../../config/constants";
 import { formatToken } from "../../lib/formatters";
 
 interface GameGridProps {
-  onSelectGame: (game: "word_duel" | "speed_trivia") => void;
+  onSelectGame: (game: "word_duel" | "speed_trivia" | "practice_arena") => void;
 }
 
 export function GameGrid({ onSelectGame }: GameGridProps) {
