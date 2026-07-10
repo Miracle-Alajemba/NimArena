@@ -13,6 +13,14 @@ describe("NimArena Contract", function () {
         return backendSigner.signMessage(ethers.getBytes(messageHash));
     }
 
+    async function signWordPotResult(potId: number, playerAddress: string, score: number): Promise<string> {
+        const messageHash = ethers.solidityPackedKeccak256(
+            ["uint256", "address", "uint256"],
+            [potId, playerAddress, score]
+        );
+        return backendSigner.signMessage(ethers.getBytes(messageHash));
+    }
+
   let arena: NimArena;
   let usdt: MockERC20;
   let nim: MockERC20;
@@ -255,6 +263,167 @@ describe("NimArena Contract", function () {
 
       const round = await arena.triviaRounds(1);
       expect(round.finalized).to.be.true;
+    });
+  });
+
+  describe("Word Pot", function () {
+    it("should allow creating a Word Pot round", async function () {
+      const entryFee = ethers.parseUnits("5", 6); // 5 USDT
+      const joinWindow = 300; // 5 minutes for players to join
+
+      const tx = await arena.connect(owner).createWordPotRound(
+        await usdt.getAddress(),
+        entryFee,
+        joinWindow
+      );
+
+      await expect(tx).to.emit(arena, "WordPotRoundCreated");
+
+      const round = await arena.wordPotRounds(1);
+      expect(round.entryFee).to.equal(entryFee);
+      expect(round.finalized).to.be.false;
+      expect(round.playerCount).to.equal(0);
+      // gameEndTime = joinDeadline + 60
+      expect(round.gameEndTime - round.joinDeadline).to.equal(60);
+    });
+
+    it("should allow entering a Word Pot round before join deadline", async function () {
+      const entryFee = ethers.parseUnits("5", 6);
+      await arena.connect(owner).createWordPotRound(await usdt.getAddress(), entryFee, 300);
+
+      const initialBal = await usdt.balanceOf(player1.address);
+
+      await expect(arena.connect(player1).enterWordPot(1))
+        .to.emit(arena, "WordPotEntered")
+        .withArgs(1, player1.address);
+
+      const finalBal = await usdt.balanceOf(player1.address);
+      expect(initialBal - finalBal).to.equal(entryFee);
+
+      const round = await arena.wordPotRounds(1);
+      expect(round.poolBalance).to.equal(entryFee);
+      expect(round.playerCount).to.equal(1);
+      expect(await arena.wordPotEntered(1, player1.address)).to.be.true;
+    });
+
+    it("should reject entering a Word Pot round after join deadline", async function () {
+      const entryFee = ethers.parseUnits("5", 6);
+      await arena.connect(owner).createWordPotRound(await usdt.getAddress(), entryFee, 60);
+
+      // Fast-forward past the join deadline
+      await ethers.provider.send("evm_increaseTime", [65]);
+      await ethers.provider.send("evm_mine", []);
+
+      await expect(arena.connect(player1).enterWordPot(1))
+        .to.be.revertedWith("NimArena: join deadline passed");
+    });
+
+    it("should allow score submission with valid backend signature before gameEndTime", async function () {
+      const entryFee = ethers.parseUnits("5", 6);
+      await arena.connect(owner).createWordPotRound(await usdt.getAddress(), entryFee, 300);
+      await arena.connect(player1).enterWordPot(1);
+
+      const score = 42;
+      const signature = await signWordPotResult(1, player1.address, score);
+
+      await expect(arena.connect(player1).submitWordPotScore(1, score, signature))
+        .to.emit(arena, "WordPotScoreSubmitted")
+        .withArgs(1, player1.address, score);
+
+      const round = await arena.wordPotRounds(1);
+      expect(round.topScore).to.equal(score);
+      expect(round.topScorer).to.equal(player1.address);
+    });
+
+    it("should reject score submission after gameEndTime", async function () {
+      const entryFee = ethers.parseUnits("5", 6);
+      // joinWindow = 60s, gameEndTime = joinDeadline + 60 = 120s total
+      await arena.connect(owner).createWordPotRound(await usdt.getAddress(), entryFee, 60);
+      await arena.connect(player1).enterWordPot(1);
+
+      // Fast-forward past gameEndTime (60 + 60 = 120 seconds + buffer)
+      await ethers.provider.send("evm_increaseTime", [130]);
+      await ethers.provider.send("evm_mine", []);
+
+      const score = 42;
+      const signature = await signWordPotResult(1, player1.address, score);
+
+      await expect(arena.connect(player1).submitWordPotScore(1, score, signature))
+        .to.be.revertedWith("NimArena: round has ended");
+    });
+
+    it("should reject score submission with invalid backend signature", async function () {
+      const entryFee = ethers.parseUnits("5", 6);
+      await arena.connect(owner).createWordPotRound(await usdt.getAddress(), entryFee, 300);
+      await arena.connect(player1).enterWordPot(1);
+
+      const score = 42;
+      // Sign with player2 instead of backendSigner
+      const messageHash = ethers.solidityPackedKeccak256(
+        ["uint256", "address", "uint256"],
+        [1, player1.address, score]
+      );
+      const badSig = await player2.signMessage(ethers.getBytes(messageHash));
+
+      await expect(arena.connect(player1).submitWordPotScore(1, score, badSig))
+        .to.be.revertedWith("NimArena: invalid proof");
+    });
+
+    it("should finalize and pay the top scorer", async function () {
+      const entryFee = ethers.parseUnits("10", 6); // 10 USDT each → 20 USDT pool
+      // joinWindow = 120s, gameEnd = 120 + 60 = 180s
+      await arena.connect(owner).createWordPotRound(await usdt.getAddress(), entryFee, 120);
+
+      await arena.connect(player1).enterWordPot(1);
+      await arena.connect(player2).enterWordPot(1);
+
+      const score1 = 30;
+      const sig1 = await signWordPotResult(1, player1.address, score1);
+      await arena.connect(player1).submitWordPotScore(1, score1, sig1);
+
+      const score2 = 75;
+      const sig2 = await signWordPotResult(1, player2.address, score2);
+      await arena.connect(player2).submitWordPotScore(1, score2, sig2);
+
+      // Fast-forward past gameEndTime
+      await ethers.provider.send("evm_increaseTime", [200]);
+      await ethers.provider.send("evm_mine", []);
+
+      const initialBalP2 = await usdt.balanceOf(player2.address);
+      const initialBalFee = await usdt.balanceOf(platformFee.address);
+
+      const expectedPrize = ethers.parseUnits("19", 6); // 20 - 5% fee = 19 USDT
+      const expectedFee = ethers.parseUnits("1", 6);    // 5% of 20 USDT = 1 USDT
+
+      await expect(arena.finalizeWordPot(1))
+        .to.emit(arena, "WordPotFinalized")
+        .withArgs(1, player2.address, expectedPrize);
+
+      expect(await usdt.balanceOf(player2.address) - initialBalP2).to.equal(expectedPrize);
+      expect(await usdt.balanceOf(platformFee.address) - initialBalFee).to.equal(expectedFee);
+
+      const round = await arena.wordPotRounds(1);
+      expect(round.finalized).to.be.true;
+    });
+
+    it("should allow score submission after joinDeadline but before gameEndTime", async function () {
+      const entryFee = ethers.parseUnits("5", 6);
+      // joinWindow = 120s, gameEndTime = joinDeadline + 60 = 180s from now
+      await arena.connect(owner).createWordPotRound(await usdt.getAddress(), entryFee, 120);
+      await arena.connect(player1).enterWordPot(1);
+
+      // Fast-forward PAST joinDeadline but BEFORE gameEndTime
+      // joinDeadline is at +120s, gameEndTime is at +180s
+      await ethers.provider.send("evm_increaseTime", [125]); // past join, before game end
+      await ethers.provider.send("evm_mine", []);
+
+      const score = 55;
+      const signature = await signWordPotResult(1, player1.address, score);
+
+      // This should succeed — player joined before deadline, submitting after deadline but before gameEndTime
+      await expect(arena.connect(player1).submitWordPotScore(1, score, signature))
+        .to.emit(arena, "WordPotScoreSubmitted")
+        .withArgs(1, player1.address, score);
     });
   });
 

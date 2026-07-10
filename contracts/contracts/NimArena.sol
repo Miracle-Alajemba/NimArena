@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title NimArena
-/// @notice Competitive game hub contract for Word Duel and Speed Trivia on Base.
+/// @notice Competitive game hub contract for Word Duel, Speed Trivia, and Word Pot on Base.
 ///         Supports both USDT and NIM as stake/reward tokens.
 contract NimArena is ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -29,6 +29,7 @@ contract NimArena is ReentrancyGuard {
     address public owner;
     uint256 public nextDuelId = 1;
     uint256 public nextRoundId = 1;
+    uint256 public nextWordPotId = 1;
 
     // ─── Word Duel ───────────────────────────────────────────────────────
     struct WordDuelRound {
@@ -67,6 +68,29 @@ contract NimArena is ReentrancyGuard {
     mapping(uint256 => mapping(address => bool)) public triviaScoreSubmitted;
     mapping(bytes32 => bool) public usedProofs;
 
+    // ─── Word Pot ────────────────────────────────────────────────────────
+    /// @notice All players in a Word Pot round share the SAME letter set.
+    ///         joinDeadline  — players can enter until this timestamp
+    ///         gameStartTime — when the 60-second game window opens (= joinDeadline)
+    ///         gameEndTime   — joinDeadline + 60 seconds; scores must be submitted before this
+    struct WordPotRound {
+        address creator;
+        address token;
+        uint256 entryFee;
+        uint64 joinDeadline;   // players can join until this time
+        uint64 gameStartTime;  // when the 60-second game window begins
+        uint64 gameEndTime;    // joinDeadline + 60 seconds
+        address topScorer;
+        uint256 topScore;
+        uint256 poolBalance;
+        uint256 playerCount;
+        bool finalized;
+    }
+
+    mapping(uint256 => WordPotRound) public wordPotRounds;
+    mapping(uint256 => mapping(address => bool)) public wordPotEntered;
+    mapping(uint256 => mapping(address => bool)) public wordPotScoreSubmitted;
+
     // ─── Events ──────────────────────────────────────────────────────────
     event WordDuelRoundCreated(uint256 indexed roundId, address indexed creator, address indexed token, uint256 entryFee, uint64 endTime);
     event WordDuelEntered(uint256 indexed roundId, address indexed player);
@@ -77,6 +101,11 @@ contract NimArena is ReentrancyGuard {
     event TriviaEntered(uint256 indexed roundId, address indexed player);
     event TriviaScoreSubmitted(uint256 indexed roundId, address indexed player, uint256 score);
     event TriviaFinalized(uint256 indexed roundId, address indexed winner, uint256 prize);
+
+    event WordPotRoundCreated(uint256 indexed roundId, address indexed creator, address indexed token, uint256 entryFee, uint64 joinDeadline, uint64 gameEndTime);
+    event WordPotEntered(uint256 indexed roundId, address indexed player);
+    event WordPotScoreSubmitted(uint256 indexed roundId, address indexed player, uint256 score);
+    event WordPotFinalized(uint256 indexed roundId, address indexed winner, uint256 prize);
 
     event DailyRewardSent(address indexed token, address indexed player, uint256 amount);
 
@@ -298,6 +327,114 @@ contract NimArena is ReentrancyGuard {
     }
 
     // ═════════════════════════════════════════════════════════════════════
+    //                           WORD POT
+    // ═════════════════════════════════════════════════════════════════════
+
+    /// @notice Create a new Word Pot round.
+    /// @param token          ERC-20 token used for entry fee (USDT or NIM).
+    /// @param entryFee       Amount each player must stake to enter.
+    /// @param joinWindowSeconds  How long players can join before the game starts.
+    ///                       The game itself always runs for exactly 60 seconds after this.
+    function createWordPotRound(
+        address token,
+        uint256 entryFee,
+        uint64 joinWindowSeconds
+    ) external returns (uint256 potId) {
+        require(token == address(usdt) || token == address(nim), "NimArena: unsupported token");
+        require(entryFee > 0, "NimArena: fee required");
+        require(joinWindowSeconds >= 60, "NimArena: join window too short");
+        require(joinWindowSeconds <= 86400, "NimArena: join window too long");
+
+        potId = nextWordPotId++;
+        WordPotRound storage r = wordPotRounds[potId];
+        r.creator = msg.sender;
+        r.token = token;
+        r.entryFee = entryFee;
+        r.joinDeadline = uint64(block.timestamp) + joinWindowSeconds;
+        r.gameStartTime = r.joinDeadline;              // game starts when joining closes
+        r.gameEndTime = r.joinDeadline + 60;           // always exactly 60 seconds of play
+
+        emit WordPotRoundCreated(potId, msg.sender, token, entryFee, r.joinDeadline, r.gameEndTime);
+    }
+
+    /// @notice Enter a Word Pot round before the join deadline.
+    function enterWordPot(uint256 potId) external nonReentrant {
+        WordPotRound storage r = wordPotRounds[potId];
+        require(r.entryFee > 0, "NimArena: round not found");
+        require(block.timestamp < r.joinDeadline, "NimArena: join deadline passed");
+        require(!wordPotEntered[potId][msg.sender], "NimArena: already entered");
+        require(!r.finalized, "NimArena: already finalized");
+
+        IERC20(r.token).safeTransferFrom(msg.sender, address(this), r.entryFee);
+
+        wordPotEntered[potId][msg.sender] = true;
+        r.poolBalance += r.entryFee;
+        r.playerCount++;
+
+        emit WordPotEntered(potId, msg.sender);
+    }
+
+    /// @notice Submit a Word Pot score with a backend-signed proof.
+    ///         Submissions are accepted until gameEndTime (joinDeadline + 60s),
+    ///         so a player who joins 1 second before the deadline still has 60 seconds.
+    function submitWordPotScore(
+        uint256 potId,
+        uint256 score,
+        bytes calldata backendProof
+    ) external {
+        WordPotRound storage r = wordPotRounds[potId];
+        require(r.entryFee > 0, "NimArena: round not found");
+        // Critical: check against gameEndTime, not joinDeadline
+        require(block.timestamp <= r.gameEndTime, "NimArena: round has ended");
+        require(wordPotEntered[potId][msg.sender], "NimArena: not entered");
+        require(!wordPotScoreSubmitted[potId][msg.sender], "NimArena: already submitted");
+        require(!r.finalized, "NimArena: already finalized");
+
+        bytes32 messageHash = keccak256(
+            abi.encodePacked(potId, msg.sender, score)
+        );
+        bytes32 ethSignedHash = messageHash.toEthSignedMessageHash();
+
+        require(!usedProofs[ethSignedHash], "NimArena: proof already used");
+        usedProofs[ethSignedHash] = true;
+
+        address recovered = ethSignedHash.recover(backendProof);
+        require(recovered == backendSigner, "NimArena: invalid proof");
+
+        wordPotScoreSubmitted[potId][msg.sender] = true;
+
+        if (score > r.topScore) {
+            r.topScore = score;
+            r.topScorer = msg.sender;
+        }
+
+        emit WordPotScoreSubmitted(potId, msg.sender, score);
+    }
+
+    /// @notice Finalize the round after gameEndTime and pay the top scorer.
+    function finalizeWordPot(uint256 potId) external nonReentrant {
+        WordPotRound storage r = wordPotRounds[potId];
+        require(r.entryFee > 0, "NimArena: round not found");
+        require(block.timestamp >= r.gameEndTime, "NimArena: round not ended");
+        require(!r.finalized, "NimArena: already finalized");
+
+        r.finalized = true;
+
+        if (r.topScorer == address(0) || r.poolBalance == 0) {
+            emit WordPotFinalized(potId, address(0), 0);
+            return;
+        }
+
+        uint256 fee = (r.poolBalance * PLATFORM_FEE_BPS) / BPS_DENOMINATOR;
+        uint256 prize = r.poolBalance - fee;
+
+        IERC20(r.token).safeTransfer(platformFeeAddress, fee);
+        IERC20(r.token).safeTransfer(r.topScorer, prize);
+
+        emit WordPotFinalized(potId, r.topScorer, prize);
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
     //                           VIEWS
     // ═════════════════════════════════════════════════════════════════════
 
@@ -338,6 +475,27 @@ contract NimArena is ReentrancyGuard {
             r.creator, r.token, r.entryFee, r.startTime, r.endTime,
             r.topScorer, r.topScore, r.poolBalance, r.playerCount,
             r.finalized
+        );
+    }
+
+    function getWordPotRound(uint256 potId) external view returns (
+        address creator,
+        address token,
+        uint256 entryFee,
+        uint64 joinDeadline,
+        uint64 gameStartTime,
+        uint64 gameEndTime,
+        address topScorer,
+        uint256 topScore,
+        uint256 poolBalance,
+        uint256 playerCount,
+        bool finalized
+    ) {
+        WordPotRound storage r = wordPotRounds[potId];
+        return (
+            r.creator, r.token, r.entryFee, r.joinDeadline, r.gameStartTime,
+            r.gameEndTime, r.topScorer, r.topScore, r.poolBalance,
+            r.playerCount, r.finalized
         );
     }
 

@@ -65,6 +65,33 @@ model WordDuelSession {
   @@index([walletAddress])
 }
 
+/// Stores the ONE shared letter set generated for each Word Pot round.
+/// All players in the same round share this letter set — never regenerated.
+model WordPotRound {
+  id          Int      @id @default(autoincrement())
+  roundId     Int      @unique
+  letters     String   // shared by ALL players in this round
+  generatedAt DateTime @default(now())
+
+  @@index([roundId])
+}
+
+/// Per-player session in a Word Pot round.
+model WordPotSession {
+  id            String    @id @default(uuid())
+  roundId       Int
+  walletAddress String
+  foundWords    String[]
+  score         Int       @default(0)
+  startedAt     DateTime  @default(now())
+  completedAt   DateTime?
+  proofHash     String?
+  submitted     Boolean   @default(false)
+
+  @@index([roundId])
+  @@index([walletAddress])
+}
+
 model DailyChallengePlay {
   id            Int      @id @default(autoincrement())
   walletAddress String

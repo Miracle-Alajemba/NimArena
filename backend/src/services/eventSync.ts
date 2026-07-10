@@ -14,6 +14,7 @@ const BASE_RPC_URL = process.env.BASE_RPC_URL || "https://sepolia.base.org";
 // ABI items for getLogs
 const wordDuelFinalizedAbi = parseAbiItem("event WordDuelFinalized(uint256 indexed roundId, address indexed winner, uint256 prize)");
 const triviaFinalizedAbi = parseAbiItem("event TriviaFinalized(uint256 indexed roundId, address indexed winner, uint256 prize)");
+const wordPotFinalizedAbi = parseAbiItem("event WordPotFinalized(uint256 indexed roundId, address indexed winner, uint256 prize)");
 
 // Client setup
 const isMainnet = BASE_RPC_URL.includes("mainnet.base.org") || BASE_RPC_URL.includes("mainnet");
@@ -84,6 +85,23 @@ export async function syncOnChainEvents() {
       }
     }
 
+    // Fetch WordPotFinalized events
+    const wordPotLogs = await client.getLogs({
+      address: CONTRACT_ADDRESS,
+      event: wordPotFinalizedAbi,
+      fromBlock: lastSyncedBlock,
+      toBlock: currentBlock,
+    });
+
+    for (const log of wordPotLogs) {
+      const winner = log.args.winner;
+      const prize = log.args.prize;
+
+      if (winner && winner !== "0x0000000000000000000000000000000000000000" && prize) {
+        await updateLeaderboard("word_pot", winner, prize);
+      }
+    }
+
     lastSyncedBlock = currentBlock + 1n;
   } catch (error) {
     console.error("EventSync: Error syncing events:", error);
@@ -93,7 +111,7 @@ export async function syncOnChainEvents() {
 /**
  * Updates or inserts a leaderboard entry in the database.
  */
-async function updateLeaderboard(game: "word_duel" | "speed_trivia", player: string, prize: bigint) {
+async function updateLeaderboard(game: "word_duel" | "speed_trivia" | "word_pot", player: string, prize: bigint) {
   const playerAddr = player.toLowerCase();
   try {
     const existing = await prisma.leaderboardEntry.findUnique({
@@ -234,12 +252,58 @@ async function pollExpiredTriviaRounds() {
   }
 }
 
+/**
+ * Polls for expired Word Pot rounds and auto-finalizes them.
+ */
+async function pollExpiredWordPotRounds() {
+  try {
+    const privateKey = process.env.BACKEND_SIGNER_KEY;
+    if (!privateKey || privateKey === "0x_YOUR_BACKEND_SIGNER_PRIVATE_KEY_HERE") return;
+
+    if (CONTRACT_ADDRESS === "0x0000000000000000000000000000000000000000") return;
+
+    const provider = new ethers.JsonRpcProvider(BASE_RPC_URL);
+    const wallet = new ethers.Wallet(privateKey, provider);
+
+    const abi = [
+      "function finalizeWordPot(uint256 potId) external",
+      "function getWordPotRound(uint256 potId) external view returns (address, address, uint256, uint64, uint64, uint64, address, uint256, uint256, uint256, bool)",
+      "function nextWordPotId() external view returns (uint256)"
+    ];
+
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, abi, wallet);
+
+    const maxPotId = await contract.nextWordPotId();
+    if (!maxPotId) return;
+
+    const currentTs = Math.floor(Date.now() / 1000);
+
+    for (let i = 1; i < Number(maxPotId); i++) {
+      try {
+        const round = await contract.getWordPotRound(i);
+        const gameEndTime = Number(round[5]); // index 5 = gameEndTime
+        const finalized = round[10];
+
+        if (gameEndTime > 0 && currentTs > gameEndTime && !finalized) {
+          console.log(`EventSync: Found expired unfinalized Word Pot round ${i}. Finalizing...`);
+          const tx = await contract.finalizeWordPot(i);
+          await tx.wait(1);
+          console.log(`EventSync: Finalized Word Pot round ${i}. Hash: ${tx.hash}`);
+        }
+      } catch (err) {
+        // Skip individual round errors silently
+      }
+    }
+  } catch (error) {
+    console.error("EventSync: Error polling expired Word Pot rounds:", error);
+  }
+}
+
 export function startEventSyncService() {
   console.log("EventSync: Starting periodic on-chain event syncer...");
-  // Sync immediately
   syncOnChainEvents();
-  // Poll every 30 seconds
   setInterval(syncOnChainEvents, 30_000);
   setInterval(pollExpiredTriviaRounds, 60_000);
   setInterval(pollExpiredWordDuelRounds, 60_000);
+  setInterval(pollExpiredWordPotRounds, 60_000);
 }

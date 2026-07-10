@@ -11,6 +11,7 @@ import triviaRouter from "./routes/trivia";
 import leaderboardRouter from "./routes/leaderboard";
 import wordDuelRouter from "./routes/wordDuel";
 import dailyRouter from "./routes/daily";
+import wordPotRouter from "./routes/wordPot";
 import { startEventSyncService } from "./services/eventSync";
 
 dotenv.config();
@@ -46,6 +47,7 @@ app.use("/api/trivia", triviaRouter);
 app.use("/api/leaderboard", leaderboardRouter);
 app.use("/api/word-duel", wordDuelRouter);
 app.use("/api/daily", dailyRouter);
+app.use("/api/word-pot", wordPotRouter);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
