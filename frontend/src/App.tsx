@@ -3,13 +3,14 @@ import { NimiqProvider, useNimiq } from "./hooks/useNimiq";
 import { LobbyPage } from "./pages/LobbyPage";
 import { WordDuelPage } from "./pages/WordDuelPage";
 import { SpeedTriviaPage } from "./pages/SpeedTriviaPage";
+import { WordPotPage } from "./pages/WordPotPage";
 import { LeaderboardPage } from "./pages/LeaderboardPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { BottomNav, ActiveTab } from "./components/layout/BottomNav";
 import { USDTRipple } from "./components/layout/USDTRipple";
 import { AlertCircle } from "lucide-react";
 
-type ViewState = "lobby" | "leaderboard" | "history" | "game_word_duel" | "game_trivia";
+type ViewState = "lobby" | "leaderboard" | "history" | "game_word_duel" | "game_trivia" | "game_word_pot";
 
 function AppContent() {
   const { isReady, error } = useNimiq();
@@ -18,15 +19,17 @@ function AppContent() {
 
   // Tab mapper for navigation
   const activeTab: ActiveTab = 
-    view === "game_word_duel" || view === "game_trivia" || view === "lobby"
+    view === "game_word_duel" || view === "game_trivia" || view === "game_word_pot" || view === "lobby"
       ? "lobby"
       : (view as ActiveTab);
 
-  const handleSelectGame = (game: "word_duel" | "speed_trivia") => {
+  const handleSelectGame = (game: "word_duel" | "speed_trivia" | "word_pot") => {
     if (game === "word_duel") {
       setView("game_word_duel");
-    } else {
+    } else if (game === "speed_trivia") {
       setView("game_trivia");
+    } else {
+      setView("game_word_pot");
     }
   };
 
@@ -86,6 +89,10 @@ function AppContent() {
 
       {view === "game_trivia" && (
         <SpeedTriviaPage onShowRipple={handleShowRipple} onExit={handleNavigateHome} />
+      )}
+
+      {view === "game_word_pot" && (
+        <WordPotPage onShowRipple={handleShowRipple} onExit={handleNavigateHome} />
       )}
 
       {view === "leaderboard" && (

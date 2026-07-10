@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { formatUnits } from "viem";
+import { formatToken } from "../lib/formatters";
 import { publicClient } from "../lib/viemClient";
 import { NIM_ADDRESS } from "../config/constants";
 import { useNimiq } from "./useNimiq";
@@ -36,10 +36,7 @@ export function useNIMBalance() {
 
       setRawBalance(bal);
       // Wrapped NIM (WNIM) uses 18 decimals
-      const formatted = Number(formatUnits(bal, 18)).toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
+      const formatted = formatToken(bal, 18);
       setBalance(formatted);
     } catch (error) {
       console.error("BalanceService: Failed to fetch NIM balance:", error);

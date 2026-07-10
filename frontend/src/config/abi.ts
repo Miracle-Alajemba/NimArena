@@ -1,5 +1,5 @@
-// Auto-generated NimArena contract ABI
-export const NIM_ARENA_ABI = [
+export const NIM_ARENA_ABI = 
+[
   {
     "inputs": [
       {
@@ -92,81 +92,6 @@ export const NIM_ARENA_ABI = [
       }
     ],
     "name": "DailyRewardSent",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "duelId",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "player1",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "entryFee",
-        "type": "uint256"
-      }
-    ],
-    "name": "DuelCreated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "duelId",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "winner",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "prize",
-        "type": "uint256"
-      }
-    ],
-    "name": "DuelFinalized",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "duelId",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "player2",
-        "type": "address"
-      }
-    ],
-    "name": "DuelJoined",
     "type": "event"
   },
   {
@@ -281,7 +206,88 @@ export const NIM_ARENA_ABI = [
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "duelId",
+        "name": "roundId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "player",
+        "type": "address"
+      }
+    ],
+    "name": "WordDuelEntered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "roundId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "winner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "prize",
+        "type": "uint256"
+      }
+    ],
+    "name": "WordDuelFinalized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "roundId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "entryFee",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "endTime",
+        "type": "uint64"
+      }
+    ],
+    "name": "WordDuelRoundCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "roundId",
         "type": "uint256"
       },
       {
@@ -292,12 +298,124 @@ export const NIM_ARENA_ABI = [
       },
       {
         "indexed": false,
-        "internalType": "string",
-        "name": "word",
-        "type": "string"
+        "internalType": "uint256",
+        "name": "score",
+        "type": "uint256"
       }
     ],
-    "name": "WordRevealed",
+    "name": "WordDuelScoreSubmitted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "roundId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "player",
+        "type": "address"
+      }
+    ],
+    "name": "WordPotEntered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "roundId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "winner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "prize",
+        "type": "uint256"
+      }
+    ],
+    "name": "WordPotFinalized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "roundId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "entryFee",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "joinDeadline",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "gameEndTime",
+        "type": "uint64"
+      }
+    ],
+    "name": "WordPotRoundCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "roundId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "player",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "score",
+        "type": "uint256"
+      }
+    ],
+    "name": "WordPotScoreSubmitted",
     "type": "event"
   },
   {
@@ -342,48 +460,6 @@ export const NIM_ARENA_ABI = [
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "duelId",
-        "type": "uint256"
-      }
-    ],
-    "name": "cancelDuel",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "entryFee",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "wordHash",
-        "type": "bytes32"
-      }
-    ],
-    "name": "createDuel",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "duelId",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "token",
         "type": "address"
@@ -413,23 +489,34 @@ export const NIM_ARENA_ABI = [
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
         "internalType": "uint256",
-        "name": "",
+        "name": "entryFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint64",
+        "name": "durationSeconds",
+        "type": "uint64"
+      }
+    ],
+    "name": "createWordDuelRound",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "duelId",
         "type": "uint256"
       }
     ],
-    "name": "duels",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "player1",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "player2",
-        "type": "address"
-      },
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
       {
         "internalType": "address",
         "name": "token",
@@ -441,42 +528,20 @@ export const NIM_ARENA_ABI = [
         "type": "uint256"
       },
       {
-        "internalType": "bytes32",
-        "name": "word1Hash",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "word2Hash",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "string",
-        "name": "word1Revealed",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "word2Revealed",
-        "type": "string"
-      },
-      {
         "internalType": "uint64",
-        "name": "createdAt",
+        "name": "joinWindowSeconds",
         "type": "uint64"
-      },
-      {
-        "internalType": "uint8",
-        "name": "winner",
-        "type": "uint8"
-      },
-      {
-        "internalType": "bool",
-        "name": "finalized",
-        "type": "bool"
       }
     ],
-    "stateMutability": "view",
+    "name": "createWordPotRound",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "potId",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -500,7 +565,20 @@ export const NIM_ARENA_ABI = [
         "type": "uint256"
       }
     ],
-    "name": "finalizeDuel",
+    "name": "enterWordDuel",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "potId",
+        "type": "uint256"
+      }
+    ],
+    "name": "enterWordPot",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -526,65 +604,22 @@ export const NIM_ARENA_ABI = [
         "type": "uint256"
       }
     ],
-    "name": "getDuel",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "player1",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "player2",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
+    "name": "finalizeWordDuel",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
       {
         "internalType": "uint256",
-        "name": "entryFee",
+        "name": "potId",
         "type": "uint256"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "word1Hash",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "word2Hash",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "string",
-        "name": "word1Revealed",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "word2Revealed",
-        "type": "string"
-      },
-      {
-        "internalType": "uint64",
-        "name": "createdAt",
-        "type": "uint64"
-      },
-      {
-        "internalType": "uint8",
-        "name": "winner",
-        "type": "uint8"
-      },
-      {
-        "internalType": "bool",
-        "name": "finalized",
-        "type": "bool"
       }
     ],
-    "stateMutability": "view",
+    "name": "finalizeWordPot",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -657,16 +692,131 @@ export const NIM_ARENA_ABI = [
         "internalType": "uint256",
         "name": "duelId",
         "type": "uint256"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "wordHash",
-        "type": "bytes32"
       }
     ],
-    "name": "joinDuel",
-    "outputs": [],
-    "stateMutability": "nonpayable",
+    "name": "getWordDuelRound",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "entryFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint64",
+        "name": "startTime",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "endTime",
+        "type": "uint64"
+      },
+      {
+        "internalType": "address",
+        "name": "topScorer",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "topScore",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "poolBalance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "playerCount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "finalized",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "potId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getWordPotRound",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "entryFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint64",
+        "name": "joinDeadline",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "gameStartTime",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "gameEndTime",
+        "type": "uint64"
+      },
+      {
+        "internalType": "address",
+        "name": "topScorer",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "topScore",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "poolBalance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "playerCount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "finalized",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -685,6 +835,19 @@ export const NIM_ARENA_ABI = [
   {
     "inputs": [],
     "name": "nextRoundId",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "nextWordPotId",
     "outputs": [
       {
         "internalType": "uint256",
@@ -737,29 +900,6 @@ export const NIM_ARENA_ABI = [
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "duelId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "string",
-        "name": "word",
-        "type": "string"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "salt",
-        "type": "bytes32"
-      }
-    ],
-    "name": "revealWord",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "token",
         "type": "address"
@@ -799,6 +939,52 @@ export const NIM_ARENA_ABI = [
       }
     ],
     "name": "submitTriviaScore",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "duelId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "score",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "backendProof",
+        "type": "bytes"
+      }
+    ],
+    "name": "submitWordDuelScore",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "potId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "score",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "backendProof",
+        "type": "bytes"
+      }
+    ],
+    "name": "submitWordPotScore",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -981,6 +1167,235 @@ export const NIM_ARENA_ABI = [
     "name": "withdrawToken",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "wordDuelEntered",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "wordDuelRounds",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "entryFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint64",
+        "name": "startTime",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "endTime",
+        "type": "uint64"
+      },
+      {
+        "internalType": "address",
+        "name": "topScorer",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "topScore",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "poolBalance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "playerCount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "finalized",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "wordDuelScoreSubmitted",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "wordPotEntered",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "wordPotRounds",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "entryFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint64",
+        "name": "joinDeadline",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "gameStartTime",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "gameEndTime",
+        "type": "uint64"
+      },
+      {
+        "internalType": "address",
+        "name": "topScorer",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "topScore",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "poolBalance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "playerCount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "finalized",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "wordPotScoreSubmitted",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   }
 ] as const;

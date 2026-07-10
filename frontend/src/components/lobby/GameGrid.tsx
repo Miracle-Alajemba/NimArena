@@ -5,7 +5,7 @@ import { USDT_ADDRESS } from "../../config/constants";
 import { formatToken } from "../../lib/formatters";
 
 interface GameGridProps {
-  onSelectGame: (game: "word_duel" | "speed_trivia") => void;
+  onSelectGame: (game: "word_duel" | "speed_trivia" | "word_pot") => void;
 }
 
 export function GameGrid({ onSelectGame }: GameGridProps) {
@@ -14,6 +14,8 @@ export function GameGrid({ onSelectGame }: GameGridProps) {
   const [activeRoundsCount, setActiveRoundsCount] = useState<number>(0);
   const [triviaPrizePool, setTriviaPrizePool] = useState<string>("0.00");
   const [duelPrizePool, setDuelPrizePool] = useState<string>("0.00");
+  const [wordPotRoundsCount, setWordPotRoundsCount] = useState<number>(0);
+  const [wordPotPrizePool, setWordPotPrizePool] = useState<string>("0.00");
 
   useEffect(() => {
     async function fetchStats() {
@@ -41,6 +43,18 @@ export function GameGrid({ onSelectGame }: GameGridProps) {
           }
         }
         setTriviaPrizePool(totalTriviaUSDT > 0 ? `${totalTriviaUSDT.toFixed(2)} USDT` : "0.00 USDT");
+
+        const potRounds = await get("/api/word-pot/rounds");
+        setWordPotRoundsCount(potRounds.length);
+
+        let totalPotUSDT = 0;
+        for (const r of potRounds) {
+          if (r.tokenAddress && r.tokenAddress.toLowerCase() === USDT_ADDRESS.toLowerCase()) {
+            const v = parseFloat(formatToken(r.poolBalance, 6));
+            if (!isNaN(v)) totalPotUSDT += v;
+          }
+        }
+        setWordPotPrizePool(totalPotUSDT > 0 ? `${totalPotUSDT.toFixed(2)} USDT` : "0.00 USDT");
       } catch (err) {
         console.warn("LobbyStats: Failed to fetch stats.", err);
       }
@@ -100,12 +114,15 @@ export function GameGrid({ onSelectGame }: GameGridProps) {
           accentColor="#4F6EF7"
         />
 
-        {/* Emoji Guess */}
+        {/* Word Pot */}
         <GameCard
-          title="Emoji Guess"
-          description="Decode cryptic emoji phrases before your opponents do. Speed and wit win the pot."
-          status="coming_soon"
-          emoji="🤔"
+          title="Word Pot"
+          description="All players share the same letters. Compare words fairly under identical conditions. Highest score takes the pot!"
+          status="live"
+          emoji="🏺"
+          prize={wordPotPrizePool}
+          players={`${wordPotRoundsCount} rounds`}
+          onClick={() => onSelectGame("word_pot")}
           accentColor="#F59E0B"
         />
       </div>

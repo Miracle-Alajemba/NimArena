@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNimiq } from "../../hooks/useNimiq";
-import { useWordDuel } from "../../hooks/useWordDuel";
+import { useWordPot } from "../../hooks/useWordPot";
 import { Loader2 } from "lucide-react";
 import { PremiumLoader } from "../layout/PremiumLoader";
 import { wordEmoji, scoreForLength } from "../../lib/gameLogic";
 
-interface WordDuelGameProps {
+interface WordPotGameProps {
   roundId: number;
   entryFee: string;
   onComplete: (sessionId: string, score: number, proof: string) => void;
@@ -14,9 +14,9 @@ interface WordDuelGameProps {
 
 
 
-export function WordDuelGame({ roundId, entryFee, onComplete, onExit }: WordDuelGameProps) {
+export function WordPotGame({ roundId, entryFee, onComplete, onExit }: WordPotGameProps) {
   const { walletAddress } = useNimiq();
-  const { startSession, submitWord, finalizeSession } = useWordDuel();
+  const { startSession, submitWord, finalizeSession } = useWordPot();
 
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [letters, setLetters] = useState<string>("");
@@ -73,7 +73,7 @@ export function WordDuelGame({ roundId, entryFee, onComplete, onExit }: WordDuel
     async function init() {
       if (!walletAddress) return;
       try {
-        const data = await startSession(roundId, walletAddress, "medium");
+        const data = await startSession(roundId, walletAddress);
         setSessionId(data.sessionId);
         setLetters(data.letters);
         setTimeLeft(data.duration || 60);
@@ -103,7 +103,7 @@ export function WordDuelGame({ roundId, entryFee, onComplete, onExit }: WordDuel
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (loading || isChecking || timeLeft <= 0 || timesUp) return;
-      const el = document.getElementById("wd-input") as HTMLInputElement;
+      const el = document.getElementById("wp-input") as HTMLInputElement;
       if (!el) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (document.activeElement !== el) {
@@ -167,7 +167,7 @@ export function WordDuelGame({ roundId, entryFee, onComplete, onExit }: WordDuel
     }
   };
 
-  if (loading && !letters) return <PremiumLoader text="Generating letter set..." />;
+  if (loading && !letters) return <PremiumLoader text="Joining Word Pot..." />;
 
   const timerColor = timeLeft > 19 ? "#F1F1F3" : timeLeft > 9 ? "#F59E0B" : "#EF4444";
   const letterChips = letters.toUpperCase().split("");
@@ -184,6 +184,13 @@ export function WordDuelGame({ roundId, entryFee, onComplete, onExit }: WordDuel
           <p className="text-gray-400 mt-2 text-sm">Calculating your score...</p>
         </div>
       )}
+
+      {/* Banner */}
+      <div className="flex justify-center mb-4">
+        <div className="bg-[#13131A] border border-[#2B2B3D] px-4 py-1.5 rounded-full text-xs font-bold font-mono text-gray-400">
+          🏺 Word Pot — Round #{roundId}
+        </div>
+      </div>
 
       {/* HUD */}
       <div className="flex items-center justify-between mb-5">
@@ -231,7 +238,7 @@ export function WordDuelGame({ roundId, entryFee, onComplete, onExit }: WordDuel
             style={{
               fontFamily: "'Syne', sans-serif",
               background: "#1E1E2E",
-              border: "1px solid #7C3AED",
+              border: "1px solid #F59E0B",
               minWidth: 56,
               minHeight: 56,
             }}
@@ -243,7 +250,7 @@ export function WordDuelGame({ roundId, entryFee, onComplete, onExit }: WordDuel
 
       {/* Input panel */}
       <div className="w-full bg-[#13131A] rounded-2xl p-5 border border-[#1F1F2E] shadow-xl relative overflow-hidden mb-5">
-        <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-[#7C3AED] to-transparent" />
+        <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-[#F59E0B] to-transparent" />
 
         {/* Feedback */}
         <div className="h-16 flex items-center justify-center mb-3">
@@ -261,7 +268,7 @@ export function WordDuelGame({ roundId, entryFee, onComplete, onExit }: WordDuel
 
         <form onSubmit={handleSubmit} className="flex gap-2">
           <input
-            id="wd-input"
+            id="wp-input"
             type="text"
             value={currentInput}
             onChange={(e) => setCurrentInput(e.target.value.toUpperCase())}
@@ -274,7 +281,7 @@ export function WordDuelGame({ roundId, entryFee, onComplete, onExit }: WordDuel
           <button
             type="submit"
             disabled={!currentInput.trim() || isChecking || timeLeft <= 0}
-            className="btn-press bg-[#7C3AED] hover:bg-[#6D28D9] disabled:bg-[#1F1F2E] text-white px-5 rounded-xl font-bold flex items-center justify-center transition-colors"
+            className="btn-press bg-[#F59E0B] hover:bg-[#D97706] disabled:bg-[#1F1F2E] text-white px-5 rounded-xl font-bold flex items-center justify-center transition-colors"
             style={{ minWidth: 56 }}
           >
             {isChecking ? <Loader2 className="w-6 h-6 animate-spin" /> : "→"}
@@ -304,4 +311,4 @@ export function WordDuelGame({ roundId, entryFee, onComplete, onExit }: WordDuel
     </div>
   );
 }
-export default WordDuelGame;
+export default WordPotGame;

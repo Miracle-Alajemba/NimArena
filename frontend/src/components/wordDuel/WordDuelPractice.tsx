@@ -3,17 +3,14 @@ import { useNimiq } from "../../hooks/useNimiq";
 import { useWordDuel } from "../../hooks/useWordDuel";
 import { Loader2, Sword, Trophy } from "lucide-react";
 import { PremiumLoader } from "../layout/PremiumLoader";
+import { wordEmoji } from "../../lib/gameLogic";
 
 interface WordDuelPracticeProps {
   onExit: () => void;
   onChallengeReal: () => void;
 }
 
-function wordEmoji(len: number) {
-  if (len <= 4) return "👍";
-  if (len <= 6) return "🔥";
-  return "🏆";
-}
+
 
 export function WordDuelPractice({ onExit, onChallengeReal }: WordDuelPracticeProps) {
   const { walletAddress } = useNimiq();

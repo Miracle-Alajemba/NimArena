@@ -217,6 +217,39 @@ export function useContract() {
     [writeContractMethod]
   );
 
+  // Word Pot writes
+  const createWordPotRound = useCallback(
+    async (entryFee: string, joinWindowSeconds: number, tokenAddress: `0x${string}`) => {
+      const decimals = tokenAddress.toLowerCase() === NIM_ADDRESS.toLowerCase() ? 18 : 6;
+      const feeRaw = parseUnits(entryFee, decimals);
+      return writeContractMethod("createWordPotRound", [tokenAddress, feeRaw, BigInt(joinWindowSeconds)], tokenAddress, feeRaw);
+    },
+    [writeContractMethod]
+  );
+
+  const enterWordPot = useCallback(
+    async (potId: number, entryFee: string, tokenAddress: `0x${string}`) => {
+      const decimals = tokenAddress.toLowerCase() === NIM_ADDRESS.toLowerCase() ? 18 : 6;
+      const feeRaw = parseUnits(entryFee, decimals);
+      return writeContractMethod("enterWordPot", [BigInt(potId)], tokenAddress, feeRaw);
+    },
+    [writeContractMethod]
+  );
+
+  const submitWordPotScore = useCallback(
+    async (potId: number, score: number, backendProof: `0x${string}`) => {
+      return writeContractMethod("submitWordPotScore", [BigInt(potId), BigInt(score), backendProof]);
+    },
+    [writeContractMethod]
+  );
+
+  const finalizeWordPot = useCallback(
+    async (potId: number) => {
+      return writeContractMethod("finalizeWordPot", [BigInt(potId)]);
+    },
+    [writeContractMethod]
+  );
+
   return {
     txLoading,
     txError,
@@ -228,6 +261,10 @@ export function useContract() {
     enterTrivia,
     submitTriviaScore,
     finalizeTrivia,
+    createWordPotRound,
+    enterWordPot,
+    submitWordPotScore,
+    finalizeWordPot,
   };
 }
 
