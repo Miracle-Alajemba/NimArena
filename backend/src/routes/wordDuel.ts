@@ -121,6 +121,21 @@ router.get("/rounds", async (req: Request, res: Response) => {
   }
 });
 
+// In-memory fallback database for word duel sessions when PostgreSQL is offline
+interface WordDuelSessionObj {
+  id: string;
+  roundId: number;
+  walletAddress: string;
+  letters: string;
+  foundWords: string[];
+  score: number;
+  startedAt: Date;
+  completedAt: Date | null;
+  submitted: boolean;
+  proofHash: string | null;
+}
+const inMemorySessions = new Map<string, WordDuelSessionObj>();
+
 // POST /api/word-duel/session/start
 router.post("/session/start", async (req: Request, res: Response) => {
   const { roundId, walletAddress, difficulty } = req.body;
@@ -133,16 +148,37 @@ router.post("/session/start", async (req: Request, res: Response) => {
 
   try {
     const letters = generateLetters(difficulty || "medium");
+    let session;
+    let useInMemory = false;
 
-    const session = await prisma.wordDuelSession.create({
-      data: {
+    try {
+      session = await prisma.wordDuelSession.create({
+        data: {
+          roundId,
+          walletAddress: userAddress,
+          letters,
+          foundWords: [],
+          score: 0,
+        },
+      });
+    } catch (dbErr) {
+      console.warn("WordDuelService: Database offline, starting session in-memory.");
+      const tempId = "session_" + Math.random().toString(36).substring(2, 15) + "_" + Date.now();
+      session = {
+        id: tempId,
         roundId,
         walletAddress: userAddress,
         letters,
-        foundWords: [],
+        foundWords: [] as string[],
         score: 0,
-      },
-    });
+        startedAt: new Date(),
+        completedAt: null,
+        submitted: false,
+        proofHash: null,
+      };
+      inMemorySessions.set(tempId, session);
+      useInMemory = true;
+    }
 
     return res.json({
       sessionId: session.id,
@@ -164,9 +200,22 @@ router.post("/session/submit-word", async (req: Request, res: Response) => {
   }
 
   try {
-    const session = await prisma.wordDuelSession.findUnique({
-      where: { id: sessionId },
-    });
+    let session: any = null;
+    let useInMemory = false;
+
+    try {
+      session = await prisma.wordDuelSession.findUnique({
+        where: { id: sessionId },
+      });
+    } catch (dbErr) {
+      session = inMemorySessions.get(sessionId) || null;
+      useInMemory = true;
+    }
+
+    if (!session && !useInMemory) {
+      session = inMemorySessions.get(sessionId) || null;
+      useInMemory = !!session;
+    }
 
     if (!session) {
       return res.status(404).json({ error: "Session not found" });
@@ -177,7 +226,8 @@ router.post("/session/submit-word", async (req: Request, res: Response) => {
     }
 
     // Verify time limit (60s + 5s grace period)
-    const elapsedMs = Date.now() - session.startedAt.getTime();
+    const startedTime = session.startedAt instanceof Date ? session.startedAt.getTime() : new Date(session.startedAt).getTime();
+    const elapsedMs = Date.now() - startedTime;
     if (elapsedMs > 65000) {
       return res.status(400).json({ error: "Session time limit exceeded" });
     }
@@ -194,13 +244,38 @@ router.post("/session/submit-word", async (req: Request, res: Response) => {
     const newScore = session.score + validation.score;
     const newFoundWords = [...session.foundWords, word.trim().toLowerCase()];
 
-    await prisma.wordDuelSession.update({
-      where: { id: sessionId },
-      data: {
-        score: newScore,
-        foundWords: newFoundWords,
-      },
-    });
+    if (useInMemory) {
+      const sess = inMemorySessions.get(sessionId)!;
+      sess.score = newScore;
+      sess.foundWords = newFoundWords;
+    } else {
+      try {
+        await prisma.wordDuelSession.update({
+          where: { id: sessionId },
+          data: {
+            score: newScore,
+            foundWords: newFoundWords,
+          },
+        });
+      } catch (dbErr) {
+        // Fallback write to in-memory cache
+        const sess = inMemorySessions.get(sessionId) || {
+          id: sessionId,
+          roundId: session.roundId,
+          walletAddress: session.walletAddress,
+          letters: session.letters,
+          foundWords: session.foundWords,
+          score: session.score,
+          startedAt: session.startedAt,
+          completedAt: session.completedAt,
+          submitted: session.submitted,
+          proofHash: session.proofHash,
+        };
+        sess.score = newScore;
+        sess.foundWords = newFoundWords;
+        inMemorySessions.set(sessionId, sess);
+      }
+    }
 
     return res.json({
       valid: true,
@@ -223,9 +298,22 @@ router.post("/session/finalize", async (req: Request, res: Response) => {
   }
 
   try {
-    const session = await prisma.wordDuelSession.findUnique({
-      where: { id: sessionId },
-    });
+    let session: any = null;
+    let useInMemory = false;
+
+    try {
+      session = await prisma.wordDuelSession.findUnique({
+        where: { id: sessionId },
+      });
+    } catch (dbErr) {
+      session = inMemorySessions.get(sessionId) || null;
+      useInMemory = true;
+    }
+
+    if (!session && !useInMemory) {
+      session = inMemorySessions.get(sessionId) || null;
+      useInMemory = !!session;
+    }
 
     if (!session) {
       return res.status(404).json({ error: "Session not found" });
@@ -241,14 +329,40 @@ router.post("/session/finalize", async (req: Request, res: Response) => {
       proof = await signWordDuelScore(session.roundId, session.walletAddress, session.score);
     }
 
-    await prisma.wordDuelSession.update({
-      where: { id: sessionId },
-      data: {
-        completedAt: new Date(),
-        submitted: true,
-        proofHash: proof,
-      },
-    });
+    if (useInMemory) {
+      const sess = inMemorySessions.get(sessionId)!;
+      sess.completedAt = new Date();
+      sess.submitted = true;
+      sess.proofHash = proof;
+    } else {
+      try {
+        await prisma.wordDuelSession.update({
+          where: { id: sessionId },
+          data: {
+            completedAt: new Date(),
+            submitted: true,
+            proofHash: proof,
+          },
+        });
+      } catch (dbErr) {
+        const sess = inMemorySessions.get(sessionId) || {
+          id: sessionId,
+          roundId: session.roundId,
+          walletAddress: session.walletAddress,
+          letters: session.letters,
+          foundWords: session.foundWords,
+          score: session.score,
+          startedAt: session.startedAt,
+          completedAt: new Date(),
+          submitted: true,
+          proofHash: proof,
+        };
+        sess.completedAt = new Date();
+        sess.submitted = true;
+        sess.proofHash = proof;
+        inMemorySessions.set(sessionId, sess);
+      }
+    }
 
     return res.json({
       score: session.score,

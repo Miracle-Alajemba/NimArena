@@ -19,6 +19,21 @@ interface DailySession {
 
 const dailySessions = new Map<string, DailySession>();
 
+// In-memory fallback database for daily challenge play records when PostgreSQL is offline
+interface InMemoryPlayRecord {
+  id: number;
+  walletAddress: string;
+  playedDate: string;
+  playedAt: Date;
+  score: number;
+  targetScore: number;
+  claimed: boolean;
+  rewardAmount: string;
+  txHash: string | null;
+}
+const inMemoryPlays: InMemoryPlayRecord[] = [];
+let nextPlayRecordId = 1;
+
 // Helper to check if a word can be built from source letters
 function canBuildFromSource(word: string, source: string): boolean {
   const sourceLetterCounts: Record<string, number> = {};
@@ -46,10 +61,18 @@ router.get("/status", async (req: Request, res: Response) => {
   
   try {
     // Find the latest play for this wallet
-    const lastPlay = await prisma.dailyChallengePlay.findFirst({
-      where: { walletAddress: walletKey },
-      orderBy: { playedAt: "desc" },
-    });
+    let lastPlay;
+    try {
+      lastPlay = await prisma.dailyChallengePlay.findFirst({
+        where: { walletAddress: walletKey },
+        orderBy: { playedAt: "desc" },
+      });
+    } catch (dbErr) {
+      console.warn("DailyService: Database query failed, checking in-memory backup.");
+      const userPlays = inMemoryPlays.filter(p => p.walletAddress === walletKey);
+      userPlays.sort((a, b) => b.playedAt.getTime() - a.playedAt.getTime());
+      lastPlay = userPlays[0] || null;
+    }
     
     let played = false;
     let claimed = false;
@@ -62,7 +85,7 @@ router.get("/status", async (req: Request, res: Response) => {
       txHash = lastPlay.txHash;
       claimed = lastPlay.claimed;
       
-      const nextTs = lastPlay.playedAt.getTime() + 24 * 60 * 60 * 1000; // 24 hours cooldown
+      const nextTs = new Date(lastPlay.playedAt).getTime() + 24 * 60 * 60 * 1000; // 24 hours cooldown
       nextAvailableAt = new Date(nextTs).toISOString();
       played = Date.now() < nextTs;
     }
@@ -93,13 +116,21 @@ router.post("/start", async (req: Request, res: Response) => {
   
   try {
     // Verify cooldown
-    const lastPlay = await prisma.dailyChallengePlay.findFirst({
-      where: { walletAddress: walletKey },
-      orderBy: { playedAt: "desc" },
-    });
+    let lastPlay;
+    try {
+      lastPlay = await prisma.dailyChallengePlay.findFirst({
+        where: { walletAddress: walletKey },
+        orderBy: { playedAt: "desc" },
+      });
+    } catch (dbErr) {
+      console.warn("DailyService: Database query failed, checking in-memory backup.");
+      const userPlays = inMemoryPlays.filter(p => p.walletAddress === walletKey);
+      userPlays.sort((a, b) => b.playedAt.getTime() - a.playedAt.getTime());
+      lastPlay = userPlays[0] || null;
+    }
     
     if (lastPlay) {
-      const nextTs = lastPlay.playedAt.getTime() + 24 * 60 * 60 * 1000;
+      const nextTs = new Date(lastPlay.playedAt).getTime() + 24 * 60 * 60 * 1000;
       if (Date.now() < nextTs) {
         return res.status(409).json({
           error: "Cooldown active. You can play again after 24 hours.",
@@ -225,45 +256,91 @@ router.post("/claim", async (req: Request, res: Response) => {
     // Unique check per day YYYY-MM-DD
     const todayDateStr = new Date().toISOString().split("T")[0];
     
-    // Check if they already claimed today in DB
-    const duplicateCheck = await prisma.dailyChallengePlay.findFirst({
-      where: {
-        walletAddress: walletKey,
-        playedDate: todayDateStr,
-      },
-    });
+    // Check if they already claimed today
+    let duplicateCheck;
+    try {
+      duplicateCheck = await prisma.dailyChallengePlay.findFirst({
+        where: {
+          walletAddress: walletKey,
+          playedDate: todayDateStr,
+        },
+      });
+    } catch (dbErr) {
+      console.warn("DailyService: Database query failed, checking in-memory backup.");
+      duplicateCheck = inMemoryPlays.find(p => p.walletAddress === walletKey && p.playedDate === todayDateStr);
+    }
     
     if (duplicateCheck) {
       return res.status(409).json({ error: "You have already claimed your daily challenge reward today." });
     }
     
-    // Save daily play cooldown in DB
-    const playRecord = await prisma.dailyChallengePlay.create({
-      data: {
+    // Save daily play cooldown
+    let playRecord;
+    let useInMemory = false;
+    try {
+      playRecord = await prisma.dailyChallengePlay.create({
+        data: {
+          walletAddress: walletKey,
+          playedDate: todayDateStr,
+          score: session.score,
+          targetScore: session.targetScore,
+          claimed: true,
+          rewardAmount: session.rewardAmount,
+          txHash: null,
+        },
+      });
+    } catch (dbErr) {
+      console.warn("DailyService: Failed to save to database, using in-memory fallback.");
+      playRecord = {
+        id: nextPlayRecordId++,
         walletAddress: walletKey,
         playedDate: todayDateStr,
+        playedAt: new Date(),
         score: session.score,
         targetScore: session.targetScore,
         claimed: true,
         rewardAmount: session.rewardAmount,
         txHash: null,
-      },
-    });
+      };
+      inMemoryPlays.push(playRecord);
+      useInMemory = true;
+    }
     
     // Trigger on-chain payment
     let txHash: string;
     try {
       txHash = await sendDailyRewardOnChain(walletKey, session.rewardAmount);
       
-      // Update DB with txHash
-      await prisma.dailyChallengePlay.update({
-        where: { id: playRecord.id },
-        data: { txHash },
-      });
+      // Update with txHash
+      if (useInMemory) {
+        const rec = inMemoryPlays.find(p => p.id === playRecord.id);
+        if (rec) rec.txHash = txHash;
+      } else {
+        try {
+          await prisma.dailyChallengePlay.update({
+            where: { id: playRecord.id },
+            data: { txHash },
+          });
+        } catch (dbErr) {
+          const rec = inMemoryPlays.find(p => p.id === playRecord.id);
+          if (rec) rec.txHash = txHash;
+        }
+      }
     } catch (contractErr: any) {
       console.error("DailyService: Failed to pay reward on-chain:", contractErr);
+      
       // Delete the cooldown so they can retry
-      await prisma.dailyChallengePlay.delete({ where: { id: playRecord.id } });
+      if (useInMemory) {
+        const idx = inMemoryPlays.findIndex(p => p.id === playRecord.id);
+        if (idx !== -1) inMemoryPlays.splice(idx, 1);
+      } else {
+        try {
+          await prisma.dailyChallengePlay.delete({ where: { id: playRecord.id } });
+        } catch (dbErr) {
+          const idx = inMemoryPlays.findIndex(p => p.id === playRecord.id);
+          if (idx !== -1) inMemoryPlays.splice(idx, 1);
+        }
+      }
       return res.status(502).json({ error: `On-chain reward payout failed: ${contractErr.message || contractErr}` });
     }
     
