@@ -6,9 +6,11 @@ interface GameCardProps {
   description: string;
   status: "live" | "coming_soon";
   details?: string;
+  prize?: string;
+  players?: string;
   onClick?: () => void;
+  emoji?: string;
   accentColor?: string;
-  icon?: React.ReactNode;
 }
 
 export function GameCard({
@@ -16,67 +18,79 @@ export function GameCard({
   description,
   status,
   details,
+  prize,
+  players,
   onClick,
+  emoji = "🎮",
   accentColor = "#7C3AED",
-  icon,
 }: GameCardProps) {
   const isLive = status === "live";
 
   return (
     <div
       onClick={isLive ? onClick : undefined}
-      style={{ minHeight: "150px" }}
-      className={`relative flex flex-col justify-between p-5 rounded-2xl glass-card transition-all duration-300 ${
+      className={`relative flex flex-col p-5 rounded-2xl bg-[#13131A] border transition-all duration-200 overflow-hidden ${
         isLive
-          ? "cursor-pointer border-l-4 border-l-[#7C3AED] hover:border-l-[#A78BFA] hover:shadow-lg hover:shadow-[#7C3AED]/10 active:scale-98"
-          : "opacity-40 cursor-not-allowed"
+          ? "cursor-pointer border-[#7C3AED]/20 hover:border-[#7C3AED]/60 hover:shadow-[0_0_30px_rgba(124,58,237,0.18)] active:scale-[0.97] hover:scale-[1.02]"
+          : "opacity-40 cursor-not-allowed border-[#1F1F2E]"
       }`}
+      style={{ minHeight: "175px" }}
     >
-      {/* Upper header */}
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col gap-1.5">
-          {/* Status badge */}
-          <div>
-            {isLive ? (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30">
-                LIVE
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-gray-700/30 text-gray-400 border border-gray-600/30">
-                <Lock className="w-2.5 h-2.5" /> COMING SOON
-              </span>
-            )}
-          </div>
-          {/* Title */}
-          <h3 className="text-lg font-extrabold text-[#F1F1F3] tracking-wide mt-1">
-            {title}
-          </h3>
-        </div>
+      {/* Gradient overlay on hover */}
+      {isLive && (
+        <div
+          className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl"
+          style={{ background: `linear-gradient(135deg, ${accentColor}08 0%, transparent 70%)` }}
+        />
+      )}
 
-        {/* Custom icon */}
-        <div className="p-2.5 rounded-xl bg-[#1A1A24] border border-[#2B2B3D] text-[#A78BFA]">
-          {icon}
+      {/* Top row: emoji + badge */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="text-4xl leading-none select-none">{emoji}</div>
+        <div>
+          {isLive ? (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] live-dot" />
+              LIVE
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-800/60 text-gray-500 border border-gray-700/50">
+              🔒 COMING SOON
+            </span>
+          )}
         </div>
       </div>
+
+      {/* Title */}
+      <h3
+        className="text-lg font-extrabold text-white mb-1.5 tracking-tight"
+        style={{ fontFamily: "'Syne', sans-serif" }}
+      >
+        {title}
+      </h3>
 
       {/* Description */}
-      <p className="text-xs text-gray-400 font-body leading-relaxed mt-2.5">
-        {description}
-      </p>
+      <p className="text-xs text-gray-400 leading-relaxed flex-1">{description}</p>
 
-      {/* Details/Metadata at the bottom */}
-      <div className="flex items-center justify-between border-t border-[#1F1F2E] pt-3.5 mt-4">
-        <span className="text-[10px] font-bold tracking-wider uppercase text-gray-500">
-          {details || "Skill Game"}
-        </span>
-
-        {isLive && (
-          <div className="flex items-center gap-1 text-[#7C3AED] hover:text-[#A78BFA] transition-colors">
-            <span className="text-[11px] font-extrabold tracking-wide uppercase">Play</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+      {/* Bottom meta */}
+      {isLive && (
+        <div className="flex items-center justify-between mt-4 border-t border-[#1F1F2E]/80 pt-3">
+          <div className="flex items-center gap-3 text-[10px] font-bold font-mono">
+            {prize && (
+              <span className="text-[#F59E0B]">💰 {prize}</span>
+            )}
+            {players && (
+              <span className="text-gray-400">👥 {players}</span>
+            )}
+            {!prize && !players && details && (
+              <span className="text-gray-500 uppercase tracking-wider">{details}</span>
+            )}
           </div>
-        )}
-      </div>
+          <div className="flex items-center gap-1 text-[#A78BFA] text-[10px] font-bold uppercase tracking-wider">
+            Play <ArrowRight className="w-3 h-3" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

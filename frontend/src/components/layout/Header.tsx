@@ -15,62 +15,61 @@ export function Header({ onBack }: HeaderProps) {
   const { balance: nimBalance } = useNIMBalance();
 
   return (
-    <header className="sticky top-0 z-50 flex items-center justify-between px-5 py-4 bg-[#13131A]/80 backdrop-blur-md border-b border-[#1F1F2E] shadow-lg">
-      {/* Brand logo / Gaming Arena Hub Logo */}
-      <div 
-        className={`flex items-center gap-2.5 select-none ${onBack ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+    <header className="sticky top-0 z-50 flex items-center justify-between px-5 py-3.5 bg-[#13131A]/90 backdrop-blur-xl border-b border-[#7C3AED]/15 shadow-[0_2px_20px_rgba(0,0,0,0.4)]">
+      {/* Brand logo */}
+      <div
+        className={`flex items-center gap-2.5 select-none ${onBack ? "cursor-pointer" : ""}`}
         onClick={onBack}
       >
-        {/* Arena Shield Emblem */}
-        <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-[#13131A] border-2 border-[#7C3AED]/80 shadow-[0_0_15px_rgba(124,58,237,0.3)] overflow-hidden">
-          {/* Neon background grid/lines */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#1F1F2E_1px,transparent_1px),linear-gradient(to_bottom,#1F1F2E_1px,transparent_1px)] bg-[size:5px_5px] opacity-45" />
-          
-          {/* Swirling arena energy rings */}
-          <div className="absolute inset-0 border border-t-[#A78BFA] border-r-transparent border-b-[#7C3AED] border-l-transparent rounded-full animate-spin duration-3000 opacity-60" />
-          
-          {/* Game Hub Icon */}
-          <Gamepad2 className="w-5 h-5 text-white z-10 drop-shadow-[0_0_4px_rgba(124,58,237,0.8)]" />
-          
-          {/* Orbiting Game Pips (representing multiple games living inside) */}
+        <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-[#13131A] border border-[#7C3AED]/60 shadow-[0_0_12px_rgba(124,58,237,0.4)] overflow-hidden">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#1F1F2E_1px,transparent_1px),linear-gradient(to_bottom,#1F1F2E_1px,transparent_1px)] bg-[size:5px_5px] opacity-40" />
+          <div className="absolute inset-0 border border-t-[#A78BFA] border-r-transparent border-b-[#7C3AED] border-l-transparent rounded-full animate-spin" style={{ animationDuration: "3s" }} />
+          <Gamepad2 className="w-4.5 h-4.5 text-white z-10 drop-shadow-[0_0_4px_rgba(124,58,237,0.8)]" />
           <span className="absolute top-1 left-1 w-1 h-1 rounded-full bg-[#10B981]" />
-          <span className="absolute bottom-1.5 right-1.5 w-1 h-1 rounded-full bg-[#F59E0B] animate-pulse" />
-          <span className="absolute top-1.5 right-1.5 w-1 h-1 rounded-full bg-[#EF4444]" />
+          <span className="absolute bottom-1 right-1 w-1 h-1 rounded-full bg-[#F59E0B] animate-pulse" />
         </div>
 
-        {/* Text Logo with metallic & neon gaming gradient */}
         <div className="flex flex-col">
-          <span className="text-sm font-extrabold tracking-[0.2em] bg-clip-text text-transparent bg-gradient-to-r from-white via-[#F3F4F6] to-gray-400 font-display uppercase leading-none">
-            NIM<span className="text-[#A78BFA]">ARENA</span>
+          <span
+            className="text-sm font-extrabold tracking-[0.15em] uppercase leading-none"
+            style={{
+              fontFamily: "'Syne', sans-serif",
+              background: "linear-gradient(90deg, #fff 30%, #A78BFA 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              textShadow: "none",
+            }}
+          >
+            NIM<span style={{ color: "#A78BFA", WebkitTextFillColor: "#A78BFA" }}>ARENA</span>
           </span>
-          <span className="text-[8px] font-bold text-gray-500 tracking-[0.3em] uppercase mt-1 leading-none">
+          <span className="text-[8px] font-bold text-gray-500 tracking-[0.3em] uppercase mt-0.5 leading-none">
             GAME HUB
           </span>
         </div>
       </div>
 
-      {/* Wallet info */}
-      <div className="flex items-center gap-3">
+      {/* Wallet pills */}
+      <div className="flex items-center gap-2">
         {/* NIM Balance */}
-        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#E0B833]/15 border border-[#E0B833]/30">
-          <span className="text-[10px] font-extrabold text-[#E0B833]">NIM</span>
-          <span className="text-xs font-bold text-white font-mono">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#4F6EF7]/15 border border-[#4F6EF7]/35">
+          <span className="text-[9px] font-extrabold text-[#4F6EF7] tracking-wider">NIM</span>
+          <span className="text-[11px] font-bold text-white" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
             {nimBalance}
           </span>
         </div>
 
         {/* USDT Balance */}
-        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#10B981]/15 border border-[#10B981]/30">
-          <span className="text-[10px] font-extrabold text-[#10B981]">USDT</span>
-          <span className="text-xs font-bold text-white font-mono">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#10B981]/15 border border-[#10B981]/35">
+          <span className="text-[9px] font-extrabold text-[#10B981] tracking-wider">USDT</span>
+          <span className="text-[11px] font-bold text-white" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
             {usdtBalance}
           </span>
         </div>
 
-        {/* Truncated Address */}
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#7C3AED]/10 border border-[#7C3AED]/30 text-[#A78BFA]">
-          <Wallet className="w-3.5 h-3.5" />
-          <span className="text-xs font-bold font-mono">
+        {/* Wallet address */}
+        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#7C3AED]/10 border border-[#7C3AED]/25 text-[#A78BFA]">
+          <Wallet className="w-3 h-3" />
+          <span className="text-[10px] font-bold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
             {truncateAddress(walletAddress)}
           </span>
         </div>

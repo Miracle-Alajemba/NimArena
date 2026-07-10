@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNimiq } from "../../hooks/useNimiq";
 import { useWordDuel } from "../../hooks/useWordDuel";
-import { Loader2, Timer, Zap, ArrowRight, ShieldCheck } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { PremiumLoader } from "../layout/PremiumLoader";
 
 interface WordDuelGameProps {
   roundId: number;
@@ -10,312 +11,307 @@ interface WordDuelGameProps {
   onExit: () => void;
 }
 
+function wordEmoji(len: number) {
+  if (len <= 4) return "👍";
+  if (len <= 6) return "🔥";
+  return "🏆";
+}
+
+function scoreForLength(len: number) {
+  if (len === 3) return 3;
+  if (len === 4) return 4;
+  if (len === 5) return 6;
+  if (len === 6) return 9;
+  return 12;
+}
+
 export function WordDuelGame({ roundId, entryFee, onComplete, onExit }: WordDuelGameProps) {
   const { walletAddress } = useNimiq();
   const { startSession, submitWord, finalizeSession } = useWordDuel();
 
-  // Session State
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [letters, setLetters] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [timesUp, setTimesUp] = useState(false);
 
-  // Gameplay State
   const [timeLeft, setTimeLeft] = useState(60);
   const [currentInput, setCurrentInput] = useState("");
   const [isChecking, setIsChecking] = useState(false);
   const [score, setScore] = useState(0);
-  const [foundWords, setFoundWords] = useState<string[]>([]);
-  const [feedback, setFeedback] = useState<{ message: string; emoji: string; type: 'success' | 'error' | null }>({ message: "", emoji: "", type: null });
-  const [animationTrigger, setAnimationTrigger] = useState(0);
+  const [foundWords, setFoundWords] = useState<{ word: string; len: number }[]>([]);
+  const [tileState, setTileState] = useState<"idle" | "success" | "error">("idle");
+  const [feedback, setFeedback] = useState<{ msg: string; pts: number; type: "success" | "error" } | null>(null);
+  const [floatPts, setFloatPts] = useState<{ id: number; pts: number }[]>([]);
+  const [floatIdCounter, setFloatIdCounter] = useState(0);
 
-  // Audio Context Ref
   const audioCtxRef = useRef<AudioContext | null>(null);
 
   const initAudio = () => {
-    if (!audioCtxRef.current) {
+    if (!audioCtxRef.current)
       audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
   };
 
-  const playSound = (type: 'success' | 'error') => {
-    if (!audioCtxRef.current) return;
+  const playSound = (type: "success" | "error") => {
     const ctx = audioCtxRef.current;
-    if (ctx.state === 'suspended') ctx.resume();
-
+    if (!ctx) return;
+    if (ctx.state === "suspended") ctx.resume();
     const osc = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-    
-    osc.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    
-    if (type === 'success') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-      osc.frequency.exponentialRampToValueAtTime(1046.50, ctx.currentTime + 0.1); // C6
-      
-      gainNode.gain.setValueAtTime(0, ctx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.05);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-      
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    if (type === "success") {
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1046.5, ctx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
       osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.3);
+      osc.stop(ctx.currentTime + 0.35);
     } else {
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(150, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.2);
-      
-      gainNode.gain.setValueAtTime(0, ctx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.02);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
-      
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(160, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.18);
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.2);
     }
   };
 
-  // Initialize Word Duel Session
   useEffect(() => {
-    async function initSession() {
+    async function init() {
       if (!walletAddress) return;
       try {
-        const sessionData = await startSession(roundId, walletAddress, "medium");
-        setSessionId(sessionData.sessionId);
-        setLetters(sessionData.letters);
-        setTimeLeft(sessionData.duration || 60);
+        const data = await startSession(roundId, walletAddress, "medium");
+        setSessionId(data.sessionId);
+        setLetters(data.letters);
+        setTimeLeft(data.duration || 60);
         setLoading(false);
         initAudio();
-      } catch (err) {
-        console.error("WordDuelGame: Failed to start session:", err);
-        alert("Failed to start Word Duel session. Returning to lobby.");
+      } catch {
+        alert("Failed to start session.");
         onExit();
       }
     }
-    initSession();
-  }, [roundId, walletAddress, startSession, onExit]);
+    init();
+  }, [roundId, walletAddress]);
 
-  // Countdown timer
+  // Timer
   useEffect(() => {
     if (loading || !sessionId) return;
-    
-    const timer = setInterval(() => {
+    const t = setInterval(() => {
       setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleFinalize();
-          return 0;
-        }
+        if (prev <= 1) { clearInterval(t); handleTimesUp(); return 0; }
         return prev - 1;
       });
     }, 1000);
-
-    return () => clearInterval(timer);
+    return () => clearInterval(t);
   }, [loading, sessionId]);
 
-  // Listen to keys globally to auto-focus and input text
+  // Global keyboard
   useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (loading || isChecking || timeLeft <= 0) return;
-      const inputEl = document.getElementById("word-input-field") as HTMLInputElement;
-      if (!inputEl) return;
-
-      // Ignore keypresses if a modifier key (like Ctrl, Cmd, Alt) is pressed
+    const handler = (e: KeyboardEvent) => {
+      if (loading || isChecking || timeLeft <= 0 || timesUp) return;
+      const el = document.getElementById("wd-input") as HTMLInputElement;
+      if (!el) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      
-      // If the input is not active, focus it and append letter
-      if (document.activeElement !== inputEl) {
-        if (e.key.length === 1 && /^[a-zA-Z]$/.test(e.key)) {
-          inputEl.focus();
-          setCurrentInput((prev) => (prev + e.key).toUpperCase());
+      if (document.activeElement !== el) {
+        if (/^[a-zA-Z]$/.test(e.key)) {
+          el.focus();
+          setCurrentInput((p) => (p + e.key).toUpperCase());
           e.preventDefault();
         } else if (e.key === "Backspace") {
-          inputEl.focus();
-          setCurrentInput((prev) => prev.slice(0, -1));
+          el.focus();
+          setCurrentInput((p) => p.slice(0, -1));
           e.preventDefault();
-        } else if (e.key === "Enter") {
-          inputEl.focus();
         }
       }
     };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [loading, isChecking, timeLeft, timesUp]);
 
-    window.addEventListener("keydown", handleGlobalKeyDown);
-    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [loading, isChecking, timeLeft]);
-
-  const handleFinalize = async () => {
-    if (!sessionId) return;
+  const handleTimesUp = async () => {
+    setTimesUp(true);
     setLoading(true);
     try {
-      const res = await finalizeSession(sessionId);
-      onComplete(sessionId, res.score, res.proof);
-    } catch (err) {
-      console.error("WordDuelGame: Finalize failed:", err);
-      alert("Failed to submit score to contract server. Please try again.");
+      const res = await finalizeSession(sessionId!);
+      setTimeout(() => onComplete(sessionId!, res.score, res.proof), 1800);
+    } catch {
       onExit();
     }
   };
 
-  const getEmojiForLength = (length: number) => {
-    if (length < 3) return "🙂";
-    if (length <= 4) return "👍";
-    if (length <= 6) return "🔥";
-    if (length <= 8) return "🚀";
-    return "🤯";
-  };
-
-  const handleWordSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentInput.trim() || isChecking || !sessionId || timeLeft <= 0) return;
-
-    const wordToValidate = currentInput.trim().toUpperCase();
+    const word = currentInput.trim().toUpperCase();
     setIsChecking(true);
-    setAnimationTrigger((prev) => prev + 1);
-
     try {
-      const res = await submitWord(sessionId, wordToValidate);
+      const res = await submitWord(sessionId, word);
       if (res.valid) {
-        playSound('success');
-        const emoji = getEmojiForLength(wordToValidate.length);
-        setFeedback({ message: `+${res.scoreAdded} Points!`, emoji, type: 'success' });
+        playSound("success");
+        setTileState("success");
         setScore(res.totalScore);
-        if (res.foundWords) {
-          setFoundWords(res.foundWords);
-        } else {
-          setFoundWords(prev => [...prev, wordToValidate.toLowerCase()]);
-        }
+        const pts = res.scoreAdded ?? scoreForLength(word.length);
+        const id = floatIdCounter + 1;
+        setFloatIdCounter(id);
+        setFloatPts((p) => [...p, { id, pts }]);
+        setTimeout(() => setFloatPts((p) => p.filter((x) => x.id !== id)), 1300);
+        setFoundWords((p) => [...p, { word, len: word.length }]);
+        setFeedback({ msg: `+${pts} Points!`, pts, type: "success" });
         setCurrentInput("");
       } else {
-        playSound('error');
-        setFeedback({ message: res.error || "Invalid Word", emoji: "❌", type: 'error' });
+        playSound("error");
+        setTileState("error");
+        setFeedback({ msg: res.error || "Invalid word", pts: 0, type: "error" });
       }
-    } catch (err) {
-      console.error(err);
-      playSound('error');
-      setFeedback({ message: "Network Error", emoji: "⚠️", type: 'error' });
+    } catch {
+      playSound("error");
+      setTileState("error");
+      setFeedback({ msg: "Network error", pts: 0, type: "error" });
     } finally {
       setIsChecking(false);
-      setTimeout(() => {
-        setFeedback({ message: "", emoji: "", type: null });
-      }, 1500);
+      setTimeout(() => { setTileState("idle"); setFeedback(null); }, 1500);
     }
   };
 
-  if (loading && !letters) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-gray-400 gap-3">
-        <div className="w-10 h-10 rounded-full border-2 border-t-transparent border-[#7C3AED] animate-spin" />
-        <span className="text-sm font-extrabold uppercase tracking-wider">Generating Letter Set...</span>
-      </div>
-    );
-  }
+  if (loading && !letters) return <PremiumLoader text="Generating letter set..." />;
 
-  // Display letters list
+  const timerColor = timeLeft > 19 ? "#F1F1F3" : timeLeft > 9 ? "#F59E0B" : "#EF4444";
   const letterChips = letters.toUpperCase().split("");
 
   return (
-    <div className="pb-24 px-5 w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto pt-6 flex flex-col h-full justify-center">
-      {/* HUD Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-2 bg-[#13131A] px-4 py-2 rounded-xl border border-[#1F1F2E]">
-          <Timer className={`w-5 h-5 ${timeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-[#10B981]'}`} />
-          <span className={`text-xl font-mono font-bold ${timeLeft <= 10 ? 'text-red-500' : 'text-white'}`}>
-            {timeLeft}s
+    <div className="pb-24 px-4 w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto pt-5 flex flex-col page-fade-in">
+      {/* Times Up overlay */}
+      {timesUp && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm times-up-flash">
+          <div className="text-6xl mb-4">⏱️</div>
+          <h2 className="text-4xl font-extrabold text-white" style={{ fontFamily: "'Syne', sans-serif" }}>
+            TIME'S UP!
+          </h2>
+          <p className="text-gray-400 mt-2 text-sm">Calculating your score...</p>
+        </div>
+      )}
+
+      {/* HUD */}
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2 bg-[#13131A] px-4 py-2.5 rounded-2xl border border-[#1F1F2E]">
+          <span
+            className="text-3xl font-bold tabular-nums"
+            style={{ fontFamily: "'JetBrains Mono', monospace", color: timerColor,
+              ...(timeLeft <= 9 ? { animation: "dot-pulse 0.8s ease-in-out infinite" } : {}) }}
+          >
+            {String(timeLeft).padStart(2, "0")}s
           </span>
         </div>
 
-        <div className="flex flex-col items-end">
-          <span className="text-[10px] font-extrabold uppercase text-gray-500 tracking-wider">
-            Total Score
-          </span>
-          <span className="text-2xl font-extrabold text-[#F59E0B] font-mono">
+        {/* Score with float-up effect */}
+        <div className="relative flex flex-col items-end">
+          <span className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Score</span>
+          <span
+            className="text-3xl font-extrabold text-[#F59E0B] tabular-nums"
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}
+          >
             {score}
           </span>
+          {floatPts.map(({ id, pts }) => (
+            <span
+              key={id}
+              className="absolute -top-6 right-0 text-[#F59E0B] font-extrabold text-sm score-float pointer-events-none"
+              style={{ fontFamily: "'JetBrains Mono', monospace" }}
+            >
+              +{pts}
+            </span>
+          ))}
         </div>
       </div>
 
-      {/* Generated Letters Display */}
-      <div className="flex flex-wrap gap-2.5 justify-center mb-6 p-6 rounded-2xl bg-[#13131A]/80 border border-[#1F1F2E] shadow-inner">
-        {letterChips.map((letter, idx) => (
+      {/* Letter Tiles */}
+      <div
+        className={`flex flex-wrap gap-2 justify-center mb-5 p-5 rounded-2xl bg-[#13131A] border border-[#1F1F2E] shadow-inner ${
+          tileState === "success" ? "tile-success" : tileState === "error" ? "tile-error" : ""
+        }`}
+      >
+        {letterChips.map((letter, i) => (
           <div
-            key={idx}
-            className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-[#1A1A24] border border-[#2B2B3D] flex items-center justify-center text-white text-xl sm:text-2xl font-display font-extrabold shadow-[0_4px_12px_rgba(0,0,0,0.3)] select-none hover:border-[#7C3AED] transition-colors"
+            key={i}
+            className="w-14 h-14 rounded-xl flex items-center justify-center text-white text-2xl font-extrabold shadow-[0_4px_12px_rgba(0,0,0,0.4)] select-none transition-all"
+            style={{
+              fontFamily: "'Syne', sans-serif",
+              background: "#1E1E2E",
+              border: "1px solid #7C3AED",
+              minWidth: 56,
+              minHeight: 56,
+            }}
           >
             {letter}
           </div>
         ))}
       </div>
 
-      {/* Main Interactive Panel */}
-      <div className="w-full bg-[#13131A] rounded-2xl p-6 border border-[#1F1F2E] shadow-xl relative overflow-hidden mb-6">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#7C3AED] to-transparent opacity-50" />
-        
-        {/* Feedback Display */}
-        <div className="h-24 flex items-center justify-center mb-4">
-          {feedback.type && (
-            <div 
-              key={animationTrigger}
-              className={`flex flex-col items-center ${
-                feedback.type === 'success' ? 'animate-[bounce_0.5s_ease-in-out]' : 'animate-[shake_0.4s_ease-in-out]'
+      {/* Input panel */}
+      <div className="w-full bg-[#13131A] rounded-2xl p-5 border border-[#1F1F2E] shadow-xl relative overflow-hidden mb-5">
+        <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-[#7C3AED] to-transparent" />
+
+        {/* Feedback */}
+        <div className="h-16 flex items-center justify-center mb-3">
+          {feedback && (
+            <div
+              className={`flex items-center gap-2 font-extrabold text-sm uppercase tracking-widest ${
+                feedback.type === "success" ? "text-[#10B981]" : "text-[#EF4444]"
               }`}
+              style={{ fontFamily: "'Inter', sans-serif", animation: "page-fade-in 0.2s ease-out" }}
             >
-              <span className="text-5xl mb-2 drop-shadow-lg">{feedback.emoji}</span>
-              <span className={`text-sm font-bold uppercase tracking-widest ${
-                feedback.type === 'success' ? 'text-[#10B981]' : 'text-red-500'
-              }`}>
-                {feedback.message}
-              </span>
+              {feedback.type === "success" ? "✅" : "❌"} {feedback.msg}
             </div>
           )}
         </div>
 
-        <form onSubmit={handleWordSubmit} className="flex gap-2">
+        <form onSubmit={handleSubmit} className="flex gap-2">
           <input
-            id="word-input-field"
+            id="wd-input"
             type="text"
             value={currentInput}
             onChange={(e) => setCurrentInput(e.target.value.toUpperCase())}
-            placeholder="ENTER WORD..."
+            placeholder="TYPE WORD..."
             disabled={isChecking || timeLeft <= 0}
             autoFocus
-            className="w-full bg-[#0A0A0F] border border-[#1F1F2E] rounded-xl px-4 py-4 text-center text-2xl font-display tracking-widest text-white uppercase focus:outline-none focus:border-[#7C3AED] transition-colors disabled:opacity-50"
+            className="input-glow w-full bg-[#0A0A0F] border border-[#1F1F2E] rounded-xl px-4 py-4 text-center text-2xl text-white uppercase transition-all disabled:opacity-40"
+            style={{ fontFamily: "'Syne', sans-serif", letterSpacing: "0.15em" }}
           />
           <button
             type="submit"
             disabled={!currentInput.trim() || isChecking || timeLeft <= 0}
-            style={{ minWidth: "60px" }}
-            className="bg-[#7C3AED] hover:bg-[#6D28D9] disabled:bg-gray-700 text-white px-5 rounded-xl font-bold flex items-center justify-center transition-colors"
+            className="btn-press bg-[#7C3AED] hover:bg-[#6D28D9] disabled:bg-[#1F1F2E] text-white px-5 rounded-xl font-bold flex items-center justify-center transition-colors"
+            style={{ minWidth: 56 }}
           >
-            {isChecking ? <Loader2 className="w-6 h-6 animate-spin" /> : <ArrowRight className="w-6 h-6" />}
+            {isChecking ? <Loader2 className="w-6 h-6 animate-spin" /> : "→"}
           </button>
         </form>
       </div>
 
-      {/* Found Words Summary */}
-      <div className="flex-1 max-h-[160px] overflow-y-auto bg-[#0A0A0F] rounded-xl p-4 border border-[#1F1F2E]">
-        <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
-          <ShieldCheck className="w-3.5 h-3.5 text-[#10B981]" /> Found Words ({foundWords.length})
-        </div>
+      {/* Found words */}
+      <div className="max-h-[150px] overflow-y-auto bg-[#0A0A0F] rounded-xl p-4 border border-[#1F1F2E]">
+        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
+          ✅ Words Found ({foundWords.length})
+        </p>
         <div className="flex flex-wrap gap-2">
-          {foundWords.map((word, idx) => (
+          {foundWords.map(({ word, len }, i) => (
             <span
-              key={idx}
-              className="px-2.5 py-1 text-xs font-mono font-bold bg-[#13131A] border border-[#1F1F2E] text-gray-300 rounded-lg uppercase"
+              key={i}
+              className="word-slide-in flex items-center gap-1 px-2.5 py-1 text-xs font-bold font-mono text-[#10B981] bg-[#10B981]/10 border border-[#10B981]/25 rounded-lg uppercase"
             >
-              {word}
+              {wordEmoji(len)} {word}
             </span>
           ))}
           {foundWords.length === 0 && (
-            <span className="text-xs text-gray-600 font-mono italic">No words found yet.</span>
+            <span className="text-xs text-gray-600 italic font-mono">No words yet...</span>
           )}
         </div>
       </div>
-
-      <style dangerouslySetInnerHTML={{__html: `
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-5px); }
-          75% { transform: translateX(5px); }
-        }
-      `}} />
     </div>
   );
 }

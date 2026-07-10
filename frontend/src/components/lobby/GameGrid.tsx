@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { GameCard } from "./GameCard";
-import { Gamepad2, Award, Zap, Hash, Smile } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
 import { USDT_ADDRESS } from "../../config/constants";
 import { formatToken } from "../../lib/formatters";
@@ -19,53 +18,31 @@ export function GameGrid({ onSelectGame }: GameGridProps) {
   useEffect(() => {
     async function fetchStats() {
       try {
-        // Fetch open duels from backend
         const duels = await get("/api/duels/open");
         setOpenDuelsCount(duels.length);
-        
-        // Calculate duel prize pool (sum of fee * 2 for queued matches)
+
         let totalDuelUSDT = 0;
-        let totalDuelNIM = 0;
         for (const d of duels) {
           if (d.tokenAddress && d.tokenAddress.toLowerCase() === USDT_ADDRESS.toLowerCase()) {
-            const entryVal = parseFloat(formatToken(d.entryFee, 6));
-            if (!isNaN(entryVal)) totalDuelUSDT += entryVal * 2;
-          } else {
-            const entryVal = parseFloat(formatToken(d.entryFee, 18));
-            if (!isNaN(entryVal)) totalDuelNIM += entryVal * 2;
+            const v = parseFloat(formatToken(d.entryFee, 6));
+            if (!isNaN(v)) totalDuelUSDT += v * 2;
           }
         }
-        
-        let duelPrizeStr = "";
-        if (totalDuelUSDT > 0) duelPrizeStr += `${totalDuelUSDT.toFixed(2)} USDT Pot `;
-        if (totalDuelNIM > 0) duelPrizeStr += `${totalDuelNIM.toFixed(2)} NIM Pot`;
-        if (!duelPrizeStr) duelPrizeStr = "0.00 USDT Pot";
-        setDuelPrizePool(duelPrizeStr.trim());
+        setDuelPrizePool(totalDuelUSDT > 0 ? `${totalDuelUSDT.toFixed(2)} USDT` : "0.00 USDT");
 
-        // Fetch active trivia rounds from backend
         const rounds = await get("/api/trivia/rounds");
         setActiveRoundsCount(rounds.length);
 
-        // Calculate total trivia prize pools
         let totalTriviaUSDT = 0;
-        let totalTriviaNIM = 0;
         for (const r of rounds) {
           if (r.tokenAddress && r.tokenAddress.toLowerCase() === USDT_ADDRESS.toLowerCase()) {
-            const poolVal = parseFloat(formatToken(r.poolBalance, 6));
-            if (!isNaN(poolVal)) totalTriviaUSDT += poolVal;
-          } else {
-            const poolVal = parseFloat(formatToken(r.poolBalance, 18));
-            if (!isNaN(poolVal)) totalTriviaNIM += poolVal;
+            const v = parseFloat(formatToken(r.poolBalance, 6));
+            if (!isNaN(v)) totalTriviaUSDT += v;
           }
         }
-        
-        let triviaPrizeStr = "";
-        if (totalTriviaUSDT > 0) triviaPrizeStr += `${totalTriviaUSDT.toFixed(2)} USDT Pot `;
-        if (totalTriviaNIM > 0) triviaPrizeStr += `${totalTriviaNIM.toFixed(2)} NIM Pot`;
-        if (!triviaPrizeStr) triviaPrizeStr = "0.00 USDT Pot";
-        setTriviaPrizePool(triviaPrizeStr.trim());
+        setTriviaPrizePool(totalTriviaUSDT > 0 ? `${totalTriviaUSDT.toFixed(2)} USDT` : "0.00 USDT");
       } catch (err) {
-        console.warn("LobbyStats: Failed to fetch active stats from backend.", err);
+        console.warn("LobbyStats: Failed to fetch stats.", err);
       }
     }
 
@@ -75,44 +52,63 @@ export function GameGrid({ onSelectGame }: GameGridProps) {
   }, [get]);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-5 py-4 w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto">
-      {/* Word Duel Card */}
-      <GameCard
-        title="Word Duel"
-        description="Fast 1v1 word commit-reveal battle. Longer word wins the pool."
-        status="live"
-        details={`${openDuelsCount} open • ${duelPrizePool}`}
-        onClick={() => onSelectGame("word_duel")}
-        icon={<Gamepad2 className="w-5 h-5" />}
-      />
+    <div className="px-5 py-4 w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto page-fade-in">
+      {/* Section header */}
+      <div className="mb-5">
+        <h2
+          className="text-2xl font-extrabold text-white tracking-tight mb-1"
+          style={{ fontFamily: "'Syne', sans-serif" }}
+        >
+          Choose Your Arena
+        </h2>
+        <p className="text-xs text-gray-500 font-body">
+          Compete, earn, and prove your skills on-chain
+        </p>
+      </div>
 
-      {/* Speed Trivia Card */}
-      <GameCard
-        title="Speed Trivia"
-        description="10-question rapid multiple choice test. High scorer takes pool."
-        status="live"
-        details={`${activeRoundsCount} rounds • ${triviaPrizePool}`}
-        onClick={() => onSelectGame("speed_trivia")}
-        icon={<Award className="w-5 h-5" />}
-      />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Word Duel */}
+        <GameCard
+          title="Word Duel"
+          description="Form words from a scrambled letter set. Beat the clock and outscore rivals to claim the prize pool."
+          status="live"
+          emoji="⚔️"
+          prize={duelPrizePool}
+          players={`${openDuelsCount} open`}
+          onClick={() => onSelectGame("word_duel")}
+          accentColor="#7C3AED"
+        />
 
-      {/* Number Rush Placeholder */}
-      <GameCard
-        title="Number Rush"
-        description="Real-time sequence clicking contest. (Coming Soon)"
-        status="coming_soon"
-        details="Coming soon"
-        icon={<Hash className="w-5 h-5" />}
-      />
+        {/* Speed Trivia */}
+        <GameCard
+          title="Speed Trivia"
+          description="10 rapid-fire questions. Fastest correct answers score highest. Top scorer takes the pot."
+          status="live"
+          emoji="⚡"
+          prize={triviaPrizePool}
+          players={`${activeRoundsCount} rounds`}
+          onClick={() => onSelectGame("speed_trivia")}
+          accentColor="#10B981"
+        />
 
-      {/* Emoji Guess Placeholder */}
-      <GameCard
-        title="Emoji Guess"
-        description="Speed decoding of encrypted emojis. (Coming Soon)"
-        status="coming_soon"
-        details="Coming soon"
-        icon={<Smile className="w-5 h-5" />}
-      />
+        {/* Number Rush */}
+        <GameCard
+          title="Number Rush"
+          description="Real-time sequence clicking contest. React faster than your opponents to win."
+          status="coming_soon"
+          emoji="🔢"
+          accentColor="#4F6EF7"
+        />
+
+        {/* Emoji Guess */}
+        <GameCard
+          title="Emoji Guess"
+          description="Decode cryptic emoji phrases before your opponents do. Speed and wit win the pot."
+          status="coming_soon"
+          emoji="🤔"
+          accentColor="#F59E0B"
+        />
+      </div>
     </div>
   );
 }
