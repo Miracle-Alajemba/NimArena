@@ -18,6 +18,7 @@ export function SpeedTriviaPage({ onShowRipple, onExit }: SpeedTriviaPageProps) 
   const [selectedEntryFee, setSelectedEntryFee] = useState<string>("0.5");
   const [sessionId, setSessionId] = useState<string>("");
   const [finalScore, setFinalScore] = useState<number>(0);
+  const [isPracticeActive, setIsPracticeActive] = useState<boolean>(false);
 
   const handleStartTrivia = (roundId: number, entryFee: string) => {
     setSelectedRoundId(roundId);
@@ -42,27 +43,41 @@ export function SpeedTriviaPage({ onShowRipple, onExit }: SpeedTriviaPageProps) 
       {/* Header */}
       <Header onBack={onExit} />
 
-      {screen === "lobby" && (
-        <TriviaLobby onStartTrivia={handleStartTrivia} />
-      )}
+      {isPracticeActive ? (
+        <div className="flex-1 w-full flex flex-col pt-4 pb-24">
+          <TriviaPractice
+            onExit={() => setIsPracticeActive(false)}
+            onChallengeReal={() => setIsPracticeActive(false)}
+          />
+        </div>
+      ) : (
+        <>
+          {screen === "lobby" && (
+            <TriviaLobby
+              onStartTrivia={handleStartTrivia}
+              onStartPractice={() => setIsPracticeActive(true)}
+            />
+          )}
 
-      {screen === "playing" && selectedRoundId && (
-        <TriviaGame
-          roundId={selectedRoundId}
-          entryFee={selectedEntryFee}
-          onComplete={handleGameComplete}
-          onExit={handleExit}
-        />
-      )}
+          {screen === "playing" && selectedRoundId && (
+            <TriviaGame
+              roundId={selectedRoundId}
+              entryFee={selectedEntryFee}
+              onComplete={handleGameComplete}
+              onExit={handleExit}
+            />
+          )}
 
-      {screen === "results" && selectedRoundId && (
-        <TriviaResults
-          roundId={selectedRoundId}
-          sessionId={sessionId}
-          score={finalScore}
-          onExit={handleExit}
-          onShowRipple={onShowRipple}
-        />
+          {screen === "results" && selectedRoundId && (
+            <TriviaResults
+              roundId={selectedRoundId}
+              sessionId={sessionId}
+              score={finalScore}
+              onExit={handleExit}
+              onShowRipple={onShowRipple}
+            />
+          )}
+        </>
       )}
     </div>
   );

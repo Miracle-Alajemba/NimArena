@@ -49,19 +49,20 @@ model LeaderboardEntry {
   @@index([game, wins(sort: Desc)])
 }
 
-model DuelMatch {
-  id           Int      @id @default(autoincrement())
-  duelId       Int?     // on-chain duel ID once created
-  player1      String
-  player2      String?
-  entryFee     String   // stored as string for BigInt precision
-  tokenSymbol  String   @default("USDT")
-  tokenAddress String   @default("0x50c5771a74A317274967056fe675bb5344333063")
-  status       String   @default("queued") // queued, matched, committed, revealed, finalized
-  createdAt    DateTime @default(now())
+model WordDuelSession {
+  id            String    @id @default(uuid())
+  roundId       Int
+  walletAddress String
+  letters       String
+  foundWords    String[]
+  score         Int       @default(0)
+  startedAt     DateTime  @default(now())
+  completedAt   DateTime?
+  proofHash     String?
+  submitted     Boolean   @default(false)
 
-  @@index([status])
-  @@index([entryFee, tokenSymbol, status])
+  @@index([roundId])
+  @@index([walletAddress])
 }
 
 model DailyChallengePlay {

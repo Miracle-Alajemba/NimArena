@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 const router = Router();
-const wordSet = new Set<string>();
+export const wordSet = new Set<string>();
 
 // Path to english-words.txt
 const dictPath = path.join(__dirname, "../data/english-words.txt");

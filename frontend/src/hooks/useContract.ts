@@ -151,35 +151,35 @@ export function useContract() {
     [walletAddress, ensureAllowance]
   );
 
-  // Word Duel writes
-  const createDuel = useCallback(
-    async (entryFee: string, tokenAddress: `0x${string}`, wordHash: `0x${string}`) => {
+  // Word Duel Rounds writes
+  const createWordDuelRound = useCallback(
+    async (entryFee: string, durationSeconds: number, tokenAddress: `0x${string}`) => {
       const decimals = tokenAddress.toLowerCase() === NIM_ADDRESS.toLowerCase() ? 18 : 6;
       const feeRaw = parseUnits(entryFee, decimals);
-      return writeContractMethod("createDuel", [tokenAddress, feeRaw, wordHash], tokenAddress, feeRaw);
+      return writeContractMethod("createWordDuelRound", [tokenAddress, feeRaw, BigInt(durationSeconds)], tokenAddress, feeRaw);
     },
     [writeContractMethod]
   );
 
-  const joinDuel = useCallback(
-    async (duelId: number, entryFee: string, tokenAddress: `0x${string}`, wordHash: `0x${string}`) => {
+  const enterWordDuel = useCallback(
+    async (roundId: number, entryFee: string, tokenAddress: `0x${string}`) => {
       const decimals = tokenAddress.toLowerCase() === NIM_ADDRESS.toLowerCase() ? 18 : 6;
       const feeRaw = parseUnits(entryFee, decimals);
-      return writeContractMethod("joinDuel", [BigInt(duelId), wordHash], tokenAddress, feeRaw);
+      return writeContractMethod("enterWordDuel", [BigInt(roundId)], tokenAddress, feeRaw);
     },
     [writeContractMethod]
   );
 
-  const revealWord = useCallback(
-    async (duelId: number, word: string, salt: `0x${string}`) => {
-      return writeContractMethod("revealWord", [BigInt(duelId), word, salt]);
+  const submitWordDuelScore = useCallback(
+    async (roundId: number, score: number, backendProof: `0x${string}`) => {
+      return writeContractMethod("submitWordDuelScore", [BigInt(roundId), BigInt(score), backendProof]);
     },
     [writeContractMethod]
   );
 
-  const finalizeDuel = useCallback(
-    async (duelId: number, winnerIndex: number, signature: string) => {
-      return writeContractMethod("finalizeDuel", [BigInt(duelId), winnerIndex, signature]);
+  const finalizeWordDuel = useCallback(
+    async (roundId: number) => {
+      return writeContractMethod("finalizeWordDuel", [BigInt(roundId)]);
     },
     [writeContractMethod]
   );
@@ -217,19 +217,15 @@ export function useContract() {
     [writeContractMethod]
   );
 
-
-
   return {
     txLoading,
     txError,
-    createDuel,
-    joinDuel,
-    revealWord,
-    finalizeDuel,
+    createWordDuelRound,
+    enterWordDuel,
+    submitWordDuelScore,
+    finalizeWordDuel,
     createTriviaRound,
     enterTrivia,
-    finalizeTrivia,
-    finalizeTrivia,
     submitTriviaScore,
     finalizeTrivia,
   };

@@ -12,7 +12,7 @@ const CONTRACT_ADDRESS = (process.env.CONTRACT_ADDRESS || "0x0000000000000000000
 const BASE_RPC_URL = process.env.BASE_RPC_URL || "https://sepolia.base.org";
 
 // ABI items for getLogs
-const duelFinalizedAbi = parseAbiItem("event DuelFinalized(uint256 indexed duelId, address indexed winner, uint256 prize)");
+const wordDuelFinalizedAbi = parseAbiItem("event WordDuelFinalized(uint256 indexed roundId, address indexed winner, uint256 prize)");
 const triviaFinalizedAbi = parseAbiItem("event TriviaFinalized(uint256 indexed roundId, address indexed winner, uint256 prize)");
 
 // Client setup
@@ -50,15 +50,15 @@ export async function syncOnChainEvents() {
 
     console.log(`EventSync: Syncing blocks ${lastSyncedBlock} to ${currentBlock}`);
 
-    // Fetch DuelFinalized events
-    const duelLogs = await client.getLogs({
+    // Fetch WordDuelFinalized events
+    const wordDuelLogs = await client.getLogs({
       address: CONTRACT_ADDRESS,
-      event: duelFinalizedAbi,
+      event: wordDuelFinalizedAbi,
       fromBlock: lastSyncedBlock,
       toBlock: currentBlock,
     });
 
-    for (const log of duelLogs) {
+    for (const log of wordDuelLogs) {
       const winner = log.args.winner;
       const prize = log.args.prize;
 
@@ -139,6 +139,53 @@ async function updateLeaderboard(game: "word_duel" | "speed_trivia", player: str
  */
 
 /**
+ * Polls for expired Word Duel rounds and finalizes them.
+ */
+async function pollExpiredWordDuelRounds() {
+  try {
+    const privateKey = process.env.BACKEND_SIGNER_KEY;
+    if (!privateKey || privateKey === "0x_YOUR_BACKEND_SIGNER_PRIVATE_KEY_HERE") return;
+    
+    if (CONTRACT_ADDRESS === "0x0000000000000000000000000000000000000000") return;
+
+    const provider = new ethers.JsonRpcProvider(BASE_RPC_URL);
+    const wallet = new ethers.Wallet(privateKey, provider);
+    
+    const abi = [
+      "function finalizeWordDuel(uint256 duelId) external",
+      "function getWordDuelRound(uint256 duelId) external view returns (address, address, uint256, uint64, uint64, address, uint256, uint256, uint256, bool)",
+      "function nextDuelId() external view returns (uint256)"
+    ];
+    
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, abi, wallet);
+    
+    const maxRoundId = await contract.nextDuelId();
+    if (!maxRoundId) return;
+
+    const currentTs = Math.floor(Date.now() / 1000);
+    
+    for (let i = 1; i < Number(maxRoundId); i++) {
+      try {
+        const round = await contract.getWordDuelRound(i);
+        const endTime = Number(round[4]);
+        const finalized = round[9];
+        
+        if (endTime > 0 && currentTs > endTime && !finalized) {
+          console.log(`EventSync: Found expired unfinalized word duel round ${i}. Finalizing...`);
+          const tx = await contract.finalizeWordDuel(i);
+          await tx.wait(1);
+          console.log(`EventSync: Finalized word duel round ${i} successfully. Hash: ${tx.hash}`);
+        }
+      } catch (err) {
+        // Skip errors for individual rounds
+      }
+    }
+  } catch (error) {
+    console.error("EventSync: Error polling expired word duel rounds:", error);
+  }
+}
+
+/**
  * Polls for expired trivia rounds and finalizes them using the backend signer.
  */
 async function pollExpiredTriviaRounds() {
@@ -154,7 +201,7 @@ async function pollExpiredTriviaRounds() {
     // We only need the finalizeTrivia abi and a way to read rounds
     const abi = [
       "function finalizeTrivia(uint256 roundId) external",
-      "function getTriviaRound(uint256 roundId) external view returns (address, uint256, uint64, uint64, address, uint256, uint256, uint256, bool)",
+      "function getTriviaRound(uint256 roundId) external view returns (address, address, uint256, uint64, uint64, address, uint256, uint256, uint256, bool)",
       "function nextTriviaRoundId() external view returns (uint256)"
     ];
     
@@ -168,8 +215,8 @@ async function pollExpiredTriviaRounds() {
     for (let i = 1; i < Number(maxRoundId); i++) {
       try {
         const round = await contract.getTriviaRound(i);
-        const endTime = Number(round[3]);
-        const finalized = round[8];
+        const endTime = Number(round[4]);
+        const finalized = round[9];
         
         // If expired and not finalized, call finalizeTrivia
         if (endTime > 0 && currentTs > endTime && !finalized) {
@@ -194,4 +241,5 @@ export function startEventSyncService() {
   // Poll every 30 seconds
   setInterval(syncOnChainEvents, 30_000);
   setInterval(pollExpiredTriviaRounds, 60_000);
+  setInterval(pollExpiredWordDuelRounds, 60_000);
 }

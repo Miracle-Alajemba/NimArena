@@ -9,9 +9,8 @@ import * as dotenv from "dotenv";
 import wordsRouter from "./routes/words";
 import triviaRouter from "./routes/trivia";
 import leaderboardRouter from "./routes/leaderboard";
-import duelsRouter from "./routes/duels";
+import wordDuelRouter from "./routes/wordDuel";
 import dailyRouter from "./routes/daily";
-import { registerDuelHandlers } from "./socket/duelMatchmaking";
 import { startEventSyncService } from "./services/eventSync";
 
 dotenv.config();
@@ -45,7 +44,7 @@ app.use("/api/", limiter);
 app.use("/api/words", wordsRouter);
 app.use("/api/trivia", triviaRouter);
 app.use("/api/leaderboard", leaderboardRouter);
-app.use("/api/duels", duelsRouter);
+app.use("/api/word-duel", wordDuelRouter);
 app.use("/api/daily", dailyRouter);
 
 // Health check endpoint
@@ -60,7 +59,6 @@ const io = new Server(httpServer, {
 
 io.on("connection", (socket) => {
   console.log(`Socket: New client connection [ID: ${socket.id}]`);
-  registerDuelHandlers(io, socket);
 });
 
 // Start background event synchronization service

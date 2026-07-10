@@ -31,21 +31,22 @@ contract NimArena is ReentrancyGuard {
     uint256 public nextRoundId = 1;
 
     // ─── Word Duel ───────────────────────────────────────────────────────
-    struct Duel {
-        address player1;
-        address player2;
+    struct WordDuelRound {
+        address creator;
         address token;
         uint256 entryFee;
-        bytes32 word1Hash;
-        bytes32 word2Hash;
-        string word1Revealed;
-        string word2Revealed;
-        uint64 createdAt;
-        uint8 winner; // 0=pending, 1=player1, 2=player2, 3=draw
+        uint64 startTime;
+        uint64 endTime;
+        address topScorer;
+        uint256 topScore;
+        uint256 poolBalance;
+        uint256 playerCount;
         bool finalized;
     }
 
-    mapping(uint256 => Duel) public duels;
+    mapping(uint256 => WordDuelRound) public wordDuelRounds;
+    mapping(uint256 => mapping(address => bool)) public wordDuelEntered;
+    mapping(uint256 => mapping(address => bool)) public wordDuelScoreSubmitted;
 
     // ─── Speed Trivia ────────────────────────────────────────────────────
     struct TriviaRound {
@@ -67,10 +68,10 @@ contract NimArena is ReentrancyGuard {
     mapping(bytes32 => bool) public usedProofs;
 
     // ─── Events ──────────────────────────────────────────────────────────
-    event DuelCreated(uint256 indexed duelId, address indexed player1, address indexed token, uint256 entryFee);
-    event DuelJoined(uint256 indexed duelId, address indexed player2);
-    event WordRevealed(uint256 indexed duelId, address indexed player, string word);
-    event DuelFinalized(uint256 indexed duelId, address indexed winner, uint256 prize);
+    event WordDuelRoundCreated(uint256 indexed roundId, address indexed creator, address indexed token, uint256 entryFee, uint64 endTime);
+    event WordDuelEntered(uint256 indexed roundId, address indexed player);
+    event WordDuelScoreSubmitted(uint256 indexed roundId, address indexed player, uint256 score);
+    event WordDuelFinalized(uint256 indexed roundId, address indexed winner, uint256 prize);
 
     event TriviaRoundCreated(uint256 indexed roundId, address indexed creator, address indexed token, uint256 entryFee, uint64 endTime);
     event TriviaEntered(uint256 indexed roundId, address indexed player);
@@ -108,122 +109,96 @@ contract NimArena is ReentrancyGuard {
     //                          WORD DUEL
     // ═════════════════════════════════════════════════════════════════════
 
-    function createDuel(
+    function createWordDuelRound(
         address token,
         uint256 entryFee,
-        bytes32 wordHash
-    ) external nonReentrant returns (uint256 duelId) {
+        uint64 durationSeconds
+    ) external returns (uint256 duelId) {
         require(token == address(usdt) || token == address(nim), "NimArena: unsupported token");
         require(entryFee > 0, "NimArena: fee required");
-        require(wordHash != bytes32(0), "NimArena: invalid hash");
-
-        IERC20(token).safeTransferFrom(msg.sender, address(this), entryFee);
+        require(durationSeconds >= 60, "NimArena: too short");
+        require(durationSeconds <= 86400, "NimArena: too long");
 
         duelId = nextDuelId++;
-        Duel storage d = duels[duelId];
-        d.player1 = msg.sender;
-        d.token = token;
-        d.entryFee = entryFee;
-        d.word1Hash = wordHash;
-        d.createdAt = uint64(block.timestamp);
+        WordDuelRound storage r = wordDuelRounds[duelId];
+        r.creator = msg.sender;
+        r.token = token;
+        r.entryFee = entryFee;
+        r.startTime = uint64(block.timestamp);
+        r.endTime = uint64(block.timestamp) + durationSeconds;
 
-        emit DuelCreated(duelId, msg.sender, token, entryFee);
+        emit WordDuelRoundCreated(duelId, msg.sender, token, entryFee, r.endTime);
     }
 
-    function joinDuel(
-        uint256 duelId,
-        bytes32 wordHash
-    ) external nonReentrant {
-        Duel storage d = duels[duelId];
-        require(d.player1 != address(0), "NimArena: duel not found");
-        require(d.player2 == address(0), "NimArena: duel full");
-        require(msg.sender != d.player1, "NimArena: cannot join own duel");
-        require(wordHash != bytes32(0), "NimArena: invalid hash");
+    function enterWordDuel(uint256 duelId) external nonReentrant {
+        WordDuelRound storage r = wordDuelRounds[duelId];
+        require(r.entryFee > 0, "NimArena: round not found");
+        require(block.timestamp < r.endTime, "NimArena: round ended");
+        require(!wordDuelEntered[duelId][msg.sender], "NimArena: already entered");
+        require(!r.finalized, "NimArena: already finalized");
 
-        IERC20(d.token).safeTransferFrom(msg.sender, address(this), d.entryFee);
+        IERC20(r.token).safeTransferFrom(msg.sender, address(this), r.entryFee);
 
-        d.player2 = msg.sender;
-        d.word2Hash = wordHash;
+        wordDuelEntered[duelId][msg.sender] = true;
+        r.poolBalance += r.entryFee;
+        r.playerCount++;
 
-        emit DuelJoined(duelId, msg.sender);
+        emit WordDuelEntered(duelId, msg.sender);
     }
 
-    function revealWord(
+    function submitWordDuelScore(
         uint256 duelId,
-        string calldata word,
-        bytes32 salt
+        uint256 score,
+        bytes calldata backendProof
     ) external {
-        Duel storage d = duels[duelId];
-        require(!d.finalized, "NimArena: already finalized");
-        require(
-            msg.sender == d.player1 || msg.sender == d.player2,
-            "NimArena: not a player"
+        WordDuelRound storage r = wordDuelRounds[duelId];
+        require(r.entryFee > 0, "NimArena: round not found");
+        require(block.timestamp <= r.endTime, "NimArena: round ended");
+        require(wordDuelEntered[duelId][msg.sender], "NimArena: not entered");
+        require(!wordDuelScoreSubmitted[duelId][msg.sender], "NimArena: already submitted");
+        require(!r.finalized, "NimArena: already finalized");
+
+        bytes32 messageHash = keccak256(
+            abi.encodePacked(duelId, msg.sender, score)
         );
-        require(d.player2 != address(0), "NimArena: no opponent yet");
+        bytes32 ethSignedHash = messageHash.toEthSignedMessageHash();
 
-        bytes32 computedHash = keccak256(abi.encodePacked(word, salt));
+        require(!usedProofs[ethSignedHash], "NimArena: proof already used");
+        usedProofs[ethSignedHash] = true;
 
-        if (msg.sender == d.player1) {
-            require(bytes(d.word1Revealed).length == 0, "NimArena: already revealed");
-            require(computedHash == d.word1Hash, "NimArena: hash mismatch");
-            d.word1Revealed = word;
-        } else {
-            require(bytes(d.word2Revealed).length == 0, "NimArena: already revealed");
-            require(computedHash == d.word2Hash, "NimArena: hash mismatch");
-            d.word2Revealed = word;
+        address recovered = ethSignedHash.recover(backendProof);
+        require(recovered == backendSigner, "NimArena: invalid proof");
+
+        wordDuelScoreSubmitted[duelId][msg.sender] = true;
+
+        if (score > r.topScore) {
+            r.topScore = score;
+            r.topScorer = msg.sender;
         }
 
-        emit WordRevealed(duelId, msg.sender, word);
+        emit WordDuelScoreSubmitted(duelId, msg.sender, score);
     }
 
-    function finalizeDuel(uint256 duelId, uint8 backendWinnerIndex, bytes calldata signature) external nonReentrant {
-        Duel storage d = duels[duelId];
-        require(!d.finalized, "NimArena: already finalized");
-        require(
-            bytes(d.word1Revealed).length > 0 && bytes(d.word2Revealed).length > 0,
-            "NimArena: both must reveal"
-        );
+    function finalizeWordDuel(uint256 duelId) external nonReentrant {
+        WordDuelRound storage r = wordDuelRounds[duelId];
+        require(r.entryFee > 0, "NimArena: round not found");
+        require(block.timestamp >= r.endTime, "NimArena: round not ended");
+        require(!r.finalized, "NimArena: already finalized");
 
-        // Verify Backend Signature
-        bytes32 messageHash = keccak256(abi.encodePacked(duelId, backendWinnerIndex));
-        bytes32 ethSignedHash = messageHash.toEthSignedMessageHash();
-        require(ethSignedHash.recover(signature) == backendSigner, "NimArena: invalid backend signature");
+        r.finalized = true;
 
-        d.finalized = true;
-        d.winner = backendWinnerIndex;
-        uint256 totalPot = d.entryFee * 2;
-        uint256 fee = (totalPot * PLATFORM_FEE_BPS) / BPS_DENOMINATOR;
-        uint256 prize = totalPot - fee;
-
-        if (d.winner == 3) { // Draw
-            uint256 halfFee = fee / 2;
-            uint256 refund1 = d.entryFee - halfFee;
-            uint256 refund2 = d.entryFee - (fee - halfFee);
-
-            IERC20(d.token).safeTransfer(platformFeeAddress, fee);
-            IERC20(d.token).safeTransfer(d.player1, refund1);
-            IERC20(d.token).safeTransfer(d.player2, refund2);
-
-            emit DuelFinalized(duelId, address(0), 0);
+        if (r.topScorer == address(0) || r.poolBalance == 0) {
+            emit WordDuelFinalized(duelId, address(0), 0);
             return;
         }
 
-        address winnerAddr = (d.winner == 1) ? d.player1 : d.player2;
-        IERC20(d.token).safeTransfer(platformFeeAddress, fee);
-        IERC20(d.token).safeTransfer(winnerAddr, prize);
+        uint256 fee = (r.poolBalance * PLATFORM_FEE_BPS) / BPS_DENOMINATOR;
+        uint256 prize = r.poolBalance - fee;
 
-        emit DuelFinalized(duelId, winnerAddr, prize);
-    }
+        IERC20(r.token).safeTransfer(platformFeeAddress, fee);
+        IERC20(r.token).safeTransfer(r.topScorer, prize);
 
-    function cancelDuel(uint256 duelId) external nonReentrant {
-        Duel storage d = duels[duelId];
-        require(msg.sender == d.player1, "NimArena: not player1");
-        require(d.player2 == address(0), "NimArena: opponent joined");
-        require(!d.finalized, "NimArena: already finalized");
-
-        d.finalized = true;
-        d.winner = 3;
-        IERC20(d.token).safeTransfer(d.player1, d.entryFee);
+        emit WordDuelFinalized(duelId, r.topScorer, prize);
     }
 
     // ═════════════════════════════════════════════════════════════════════
@@ -326,25 +301,23 @@ contract NimArena is ReentrancyGuard {
     //                           VIEWS
     // ═════════════════════════════════════════════════════════════════════
 
-    function getDuel(uint256 duelId) external view returns (
-        address player1,
-        address player2,
+    function getWordDuelRound(uint256 duelId) external view returns (
+        address creator,
         address token,
         uint256 entryFee,
-        bytes32 word1Hash,
-        bytes32 word2Hash,
-        string memory word1Revealed,
-        string memory word2Revealed,
-        uint64 createdAt,
-        uint8 winner,
+        uint64 startTime,
+        uint64 endTime,
+        address topScorer,
+        uint256 topScore,
+        uint256 poolBalance,
+        uint256 playerCount,
         bool finalized
     ) {
-        Duel storage d = duels[duelId];
+        WordDuelRound storage r = wordDuelRounds[duelId];
         return (
-            d.player1, d.player2, d.token, d.entryFee,
-            d.word1Hash, d.word2Hash,
-            d.word1Revealed, d.word2Revealed,
-            d.createdAt, d.winner, d.finalized
+            r.creator, r.token, r.entryFee, r.startTime, r.endTime,
+            r.topScorer, r.topScore, r.poolBalance, r.playerCount,
+            r.finalized
         );
     }
 
