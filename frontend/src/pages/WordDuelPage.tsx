@@ -71,6 +71,7 @@ export function WordDuelPage({ onShowRipple, onExit }: WordDuelPageProps) {
             <WordDuelLobby 
               onStartWordDuel={handleStartWordDuel} 
               onStartPractice={() => setIsPracticeActive(true)}
+              onStartDaily={() => setIsDailyActive(true)}
             />
           )}
 

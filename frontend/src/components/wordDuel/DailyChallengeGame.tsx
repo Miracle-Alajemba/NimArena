@@ -84,6 +84,35 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
     };
   }, [walletAddress]);
 
+  // Listen to keys globally to auto-focus and input text
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (loading || claiming) return;
+      const inputEl = document.getElementById("word-input-field") as HTMLInputElement;
+      if (!inputEl) return;
+
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      
+      // If the input is not active, focus it and append letter
+      if (document.activeElement !== inputEl) {
+        if (e.key.length === 1 && /^[a-zA-Z]$/.test(e.key)) {
+          inputEl.focus();
+          setCurrentInput((prev) => (prev + e.key).toUpperCase());
+          e.preventDefault();
+        } else if (e.key === "Backspace") {
+          inputEl.focus();
+          setCurrentInput((prev) => prev.slice(0, -1));
+          e.preventDefault();
+        } else if (e.key === "Enter") {
+          inputEl.focus();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [loading, claiming]);
+
   const handleSubmitWord = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sessionId || !currentInput.trim()) return;
@@ -120,7 +149,7 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
       });
       
       setClaimHash(res.txHash);
-      onShowRipple(); // Trigger global USDT ripple
+      onShowRipple(); // Trigger USDT ripple animation
       refreshBalance();
     } catch (err: any) {
       console.error("DailyChallenge: Claim failed:", err);
@@ -265,6 +294,7 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
       {/* Input box */}
       <form onSubmit={handleSubmitWord} className="flex gap-2.5 mb-6">
         <input
+          id="word-input-field"
           type="text"
           value={currentInput}
           onChange={(e) => setCurrentInput(e.target.value.toUpperCase())}

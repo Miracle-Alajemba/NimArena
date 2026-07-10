@@ -111,6 +111,36 @@ export function WordDuelGame({ roundId, entryFee, onComplete, onExit }: WordDuel
     return () => clearInterval(timer);
   }, [loading, sessionId]);
 
+  // Listen to keys globally to auto-focus and input text
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (loading || isChecking || timeLeft <= 0) return;
+      const inputEl = document.getElementById("word-input-field") as HTMLInputElement;
+      if (!inputEl) return;
+
+      // Ignore keypresses if a modifier key (like Ctrl, Cmd, Alt) is pressed
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      
+      // If the input is not active, focus it and append letter
+      if (document.activeElement !== inputEl) {
+        if (e.key.length === 1 && /^[a-zA-Z]$/.test(e.key)) {
+          inputEl.focus();
+          setCurrentInput((prev) => (prev + e.key).toUpperCase());
+          e.preventDefault();
+        } else if (e.key === "Backspace") {
+          inputEl.focus();
+          setCurrentInput((prev) => prev.slice(0, -1));
+          e.preventDefault();
+        } else if (e.key === "Enter") {
+          inputEl.focus();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [loading, isChecking, timeLeft]);
+
   const handleFinalize = async () => {
     if (!sessionId) return;
     setLoading(true);
@@ -239,6 +269,7 @@ export function WordDuelGame({ roundId, entryFee, onComplete, onExit }: WordDuel
 
         <form onSubmit={handleWordSubmit} className="flex gap-2">
           <input
+            id="word-input-field"
             type="text"
             value={currentInput}
             onChange={(e) => setCurrentInput(e.target.value.toUpperCase())}

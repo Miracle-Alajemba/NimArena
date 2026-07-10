@@ -80,7 +80,6 @@ export function WordDuelPractice({ onExit, onChallengeReal }: WordDuelPracticePr
     setLoading(true);
     try {
       const userAddr = walletAddress || "0x0000000000000000000000000000000000000000";
-      // roundId: 0 signifies free/practice mode
       const sessionData = await startSession(0, userAddr, "medium");
       setSessionId(sessionData.sessionId);
       setLetters(sessionData.letters);
@@ -119,6 +118,34 @@ export function WordDuelPractice({ onExit, onChallengeReal }: WordDuelPracticePr
 
     return () => clearInterval(timer);
   }, [isPlaying, sessionId]);
+
+  // Global Keyboard listener for auto-focusing input field
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (!isPlaying || loading || isChecking || timeLeft <= 0) return;
+      const inputEl = document.getElementById("word-input-field") as HTMLInputElement;
+      if (!inputEl) return;
+
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      
+      if (document.activeElement !== inputEl) {
+        if (e.key.length === 1 && /^[a-zA-Z]$/.test(e.key)) {
+          inputEl.focus();
+          setCurrentWord((prev) => (prev + e.key).toUpperCase());
+          e.preventDefault();
+        } else if (e.key === "Backspace") {
+          inputEl.focus();
+          setCurrentWord((prev) => prev.slice(0, -1));
+          e.preventDefault();
+        } else if (e.key === "Enter") {
+          inputEl.focus();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [isPlaying, loading, isChecking, timeLeft]);
 
   const handleGameOver = async () => {
     setIsPlaying(false);
@@ -233,11 +260,11 @@ export function WordDuelPractice({ onExit, onChallengeReal }: WordDuelPracticePr
           </div>
 
           {/* Letter set display */}
-          <div className="flex flex-wrap gap-2 justify-center mb-6 p-5 rounded-2xl bg-[#13131A] border border-[#1F1F2E] w-full shadow-inner">
+          <div className="flex flex-wrap gap-2.5 justify-center mb-6 p-6 rounded-2xl bg-[#13131A]/80 border border-[#1F1F2E] w-full shadow-inner">
             {letterChips.map((letter, idx) => (
               <div
                 key={idx}
-                className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-[#1A1A24] border border-[#2B2B3D] flex items-center justify-center text-white text-lg sm:text-xl font-display font-extrabold shadow"
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-[#1A1A24] border border-[#2B2B3D] flex items-center justify-center text-white text-xl sm:text-2xl font-display font-extrabold shadow-[0_4px_12px_rgba(0,0,0,0.3)] select-none hover:border-[#7C3AED] transition-colors"
               >
                 {letter}
               </div>
@@ -267,8 +294,9 @@ export function WordDuelPractice({ onExit, onChallengeReal }: WordDuelPracticePr
               )}
             </div>
 
-            <form onSubmit={handleWordSubmit} className="flex gap-2">
+            <form onSubmit={handleWordSubmit} className="flex gap-2 w-full">
               <input
+                id="word-input-field"
                 type="text"
                 value={currentWord}
                 onChange={(e) => setCurrentWord(e.target.value.toUpperCase())}
@@ -280,7 +308,8 @@ export function WordDuelPractice({ onExit, onChallengeReal }: WordDuelPracticePr
               <button
                 type="submit"
                 disabled={!currentWord.trim() || isChecking}
-                className="bg-[#10B981] disabled:bg-gray-700 text-white px-5 rounded-xl font-bold flex items-center justify-center transition-colors"
+                style={{ minWidth: "60px" }}
+                className="bg-[#10B981] hover:bg-[#059669] disabled:bg-gray-700 text-white px-5 rounded-xl font-bold flex items-center justify-center transition-colors"
               >
                 {isChecking ? <Loader2 className="w-6 h-6 animate-spin" /> : <ArrowRight className="w-6 h-6" />}
               </button>

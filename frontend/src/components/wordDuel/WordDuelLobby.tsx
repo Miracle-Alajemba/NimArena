@@ -5,7 +5,7 @@ import { useNimiq } from "../../hooks/useNimiq";
 import { useUSDTBalance } from "../../hooks/useUSDTBalance";
 import { formatToken } from "../../lib/formatters";
 import { NIM_ADDRESS, CONTRACT_ADDRESS, USDT_ADDRESS } from "../../config/constants";
-import { Plus, Users, Clock, Trophy, Play, Target } from "lucide-react";
+import { Plus, Users, Clock, Trophy, Play, Target, Flame } from "lucide-react";
 import { publicClient } from "../../lib/viemClient";
 
 interface WordDuelRound {
@@ -24,9 +24,10 @@ interface WordDuelRound {
 interface WordDuelLobbyProps {
   onStartWordDuel: (roundId: number, entryFee: string) => void;
   onStartPractice: () => void;
+  onStartDaily: () => void;
 }
 
-export function WordDuelLobby({ onStartWordDuel, onStartPractice }: WordDuelLobbyProps) {
+export function WordDuelLobby({ onStartWordDuel, onStartPractice, onStartDaily }: WordDuelLobbyProps) {
   const { get } = useApi();
   const { enterWordDuel, createWordDuelRound, txLoading, txError } = useContract();
   const { walletAddress } = useNimiq();
@@ -162,29 +163,53 @@ export function WordDuelLobby({ onStartWordDuel, onStartPractice }: WordDuelLobb
         </button>
       </div>
 
-      {/* Practice Mode Banner */}
-      <div 
-        onClick={onStartPractice}
-        className="w-full relative overflow-hidden rounded-2xl bg-[#0A0A0F] border-2 border-[#10B981]/50 cursor-pointer group hover:border-[#10B981] transition-all mb-6 shadow-[0_0_15px_rgba(16,185,129,0.1)] hover:shadow-[0_0_25px_rgba(16,185,129,0.3)]"
-      >
-        <div className="absolute top-0 right-0 px-3 py-1 bg-[#10B981]/20 text-[#10B981] text-[10px] font-bold rounded-bl-lg font-mono">
-          FREE — No Wallet Needed
-        </div>
-        
-        <div className="p-5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#10B981]/20 flex items-center justify-center border border-[#10B981]/30">
-              <Target className="w-5 h-5 text-[#10B981]" />
-            </div>
-            <div>
-              <h3 className="font-display font-extrabold text-white text-lg tracking-wide group-hover:text-[#10B981] transition-colors">
-                PRACTICE ARENA
-              </h3>
-              <p className="text-[#10B981]/80 text-xs font-mono">Warm up your vocabulary</p>
+      {/* Side-by-side Game Modes Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        {/* Practice Mode Banner */}
+        <div 
+          onClick={onStartPractice}
+          className="relative overflow-hidden rounded-2xl bg-[#0A0A0F] border-2 border-[#10B981]/50 cursor-pointer group hover:border-[#10B981] transition-all shadow-[0_0_15px_rgba(16,185,129,0.1)] hover:shadow-[0_0_25px_rgba(16,185,129,0.3)]"
+        >
+          <div className="absolute top-0 right-0 px-3 py-1 bg-[#10B981]/20 text-[#10B981] text-[9px] font-bold rounded-bl-lg font-mono">
+            FREE
+          </div>
+          
+          <div className="p-5 flex items-center">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#10B981]/20 flex items-center justify-center border border-[#10B981]/30">
+                <Target className="w-5 h-5 text-[#10B981]" />
+              </div>
+              <div>
+                <h3 className="font-display font-extrabold text-white text-sm tracking-wide group-hover:text-[#10B981] transition-colors uppercase">
+                  Practice Arena
+                </h3>
+                <p className="text-gray-400 text-[10px] mt-0.5">Warm up vocabulary</p>
+              </div>
             </div>
           </div>
-          <div className="text-[#10B981]">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+        </div>
+
+        {/* Daily Challenge Banner */}
+        <div 
+          onClick={onStartDaily}
+          className="relative overflow-hidden rounded-2xl bg-[#0A0A0F] border-2 border-[#7C3AED]/50 cursor-pointer group hover:border-[#7C3AED] transition-all shadow-[0_0_15px_rgba(124,58,237,0.1)] hover:shadow-[0_0_25px_rgba(124,58,237,0.3)]"
+        >
+          <div className="absolute top-0 right-0 px-3 py-1 bg-[#7C3AED]/20 text-[#A78BFA] text-[9px] font-bold rounded-bl-lg font-mono">
+            REWARD
+          </div>
+          
+          <div className="p-5 flex items-center">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#7C3AED]/20 flex items-center justify-center border border-[#7C3AED]/30">
+                <Flame className="w-5 h-5 text-[#A78BFA]" />
+              </div>
+              <div>
+                <h3 className="font-display font-extrabold text-white text-sm tracking-wide group-hover:text-[#7C3AED] transition-colors uppercase">
+                  Daily Anagram
+                </h3>
+                <p className="text-gray-400 text-[10px] mt-0.5">Solve & Earn USDT</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -281,10 +306,6 @@ export function WordDuelLobby({ onStartWordDuel, onStartPractice }: WordDuelLobb
                   <button
                     onClick={async () => {
                       if (txLoading) return;
-                      // Call on-chain finalizeWordDuel directly through useContract
-                      // but wait, the finalizeWordDuel function on useContract expects round.roundId.
-                      // Let's create an explicit finalize handler or expose it.
-                      // It will be finalisable by anybody.
                       try {
                         const { finalizeWordDuel: finalizeRound } = useContract();
                         await finalizeRound(round.roundId);
