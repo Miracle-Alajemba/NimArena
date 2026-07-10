@@ -40,7 +40,7 @@ function canBuildFromSource(word: string, source: string): boolean {
   for (const char of source) {
     sourceLetterCounts[char] = (sourceLetterCounts[char] || 0) + 1;
   }
-  
+
   for (const char of word) {
     if (!sourceLetterCounts[char] || sourceLetterCounts[char] <= 0) {
       return false;
@@ -56,9 +56,9 @@ router.get("/status", async (req: Request, res: Response) => {
   if (!walletAddress) {
     return res.status(400).json({ error: "Missing walletAddress parameter" });
   }
-  
+
   const walletKey = walletAddress.trim().toLowerCase();
-  
+
   try {
     // Find the latest play for this wallet
     let lastPlay;
@@ -73,23 +73,23 @@ router.get("/status", async (req: Request, res: Response) => {
       userPlays.sort((a, b) => b.playedAt.getTime() - a.playedAt.getTime());
       lastPlay = userPlays[0] || null;
     }
-    
+
     let played = false;
     let claimed = false;
     let nextAvailableAt = null;
     let lastPlayedAt = null;
     let txHash = null;
-    
+
     if (lastPlay) {
       lastPlayedAt = lastPlay.playedAt;
       txHash = lastPlay.txHash;
       claimed = lastPlay.claimed;
-      
+
       const nextTs = new Date(lastPlay.playedAt).getTime() + 24 * 60 * 60 * 1000; // 24 hours cooldown
       nextAvailableAt = new Date(nextTs).toISOString();
       played = Date.now() < nextTs;
     }
-    
+
     return res.json({
       played,
       claimed,
@@ -111,9 +111,9 @@ router.post("/start", async (req: Request, res: Response) => {
   if (!walletAddress || typeof walletAddress !== "string") {
     return res.status(400).json({ error: "Missing or invalid walletAddress in request body" });
   }
-  
+
   const walletKey = walletAddress.trim().toLowerCase();
-  
+
   try {
     // Verify cooldown
     let lastPlay;
@@ -128,7 +128,7 @@ router.post("/start", async (req: Request, res: Response) => {
       userPlays.sort((a, b) => b.playedAt.getTime() - a.playedAt.getTime());
       lastPlay = userPlays[0] || null;
     }
-    
+
     if (lastPlay) {
       const nextTs = new Date(lastPlay.playedAt).getTime() + 24 * 60 * 60 * 1000;
       if (Date.now() < nextTs) {
@@ -138,10 +138,10 @@ router.post("/start", async (req: Request, res: Response) => {
         });
       }
     }
-    
+
     const sessionId = "daily_" + Math.random().toString(36).substring(2, 15);
     const sourceWord = getRandomSourceWord();
-    
+
     const session: DailySession = {
       sessionId,
       walletAddress: walletKey,
@@ -152,9 +152,9 @@ router.post("/start", async (req: Request, res: Response) => {
       rewardAmount: "1.00", // 1.00 USDT
       expiresAt: Date.now() + 15 * 60 * 1000, // 15 mins session TTL
     };
-    
+
     dailySessions.set(sessionId, session);
-    
+
     return res.json({
       sessionId,
       sourceWord,
@@ -174,53 +174,53 @@ router.post("/submit", (req: Request, res: Response) => {
   if (!sessionId || !word) {
     return res.status(400).json({ error: "Missing sessionId or word in body" });
   }
-  
+
   const session = dailySessions.get(sessionId);
   if (!session) {
     return res.status(404).json({ error: "Session not found or expired" });
   }
-  
+
   if (Date.now() > session.expiresAt) {
     dailySessions.delete(sessionId);
     return res.status(410).json({ error: "Session expired. Please start a new round." });
   }
-  
+
   const cleanWord = word.trim().toLowerCase();
-  
+
   // 1. Basic validation
   if (cleanWord.length < 3) {
     return res.status(400).json({ error: "Word must be at least 3 letters long" });
   }
-  
+
   if (!/^[a-z]+$/.test(cleanWord)) {
     return res.status(400).json({ error: "Only letters are allowed" });
   }
-  
+
   // 2. Can build from source
   if (!canBuildFromSource(cleanWord, session.sourceWord)) {
     return res.status(400).json({ error: `Cannot build word using letters of ${session.sourceWord.toUpperCase()}` });
   }
-  
+
   // 3. Duplicate check
   if (session.claimedWords.has(cleanWord)) {
     return res.status(400).json({ error: "Word already found in this round" });
   }
-  
+
   // 4. Dictionary validation
   if (!isValidWord(cleanWord)) {
     return res.status(400).json({ error: "Not a valid English word" });
   }
-  
+
   // Calculate points: length based
   // 3 letters = 1 pt, 4 letters = 2 pts, 5 letters = 4 pts, 6+ letters = 6 pts
   let points = 1;
   if (cleanWord.length === 4) points = 2;
   else if (cleanWord.length === 5) points = 4;
   else if (cleanWord.length >= 6) points = 6;
-  
+
   session.claimedWords.add(cleanWord);
   session.score += points;
-  
+
   return res.json({
     valid: true,
     word: cleanWord,
@@ -237,25 +237,25 @@ router.post("/claim", async (req: Request, res: Response) => {
   if (!sessionId || !walletAddress) {
     return res.status(400).json({ error: "Missing sessionId or walletAddress in body" });
   }
-  
+
   const session = dailySessions.get(sessionId);
   if (!session) {
     return res.status(404).json({ error: "Session not found or expired" });
   }
-  
+
   const walletKey = walletAddress.trim().toLowerCase();
   if (session.walletAddress !== walletKey) {
     return res.status(403).json({ error: "This session belongs to a different wallet" });
   }
-  
+
   if (session.score < session.targetScore) {
     return res.status(400).json({ error: `Insufficient score. Need ${session.targetScore} points, got ${session.score}` });
   }
-  
+
   try {
     // Unique check per day YYYY-MM-DD
     const todayDateStr = new Date().toISOString().split("T")[0];
-    
+
     // Check if they already claimed today
     let duplicateCheck;
     try {
@@ -269,11 +269,11 @@ router.post("/claim", async (req: Request, res: Response) => {
       console.warn("DailyService: Database query failed, checking in-memory backup.");
       duplicateCheck = inMemoryPlays.find(p => p.walletAddress === walletKey && p.playedDate === todayDateStr);
     }
-    
+
     if (duplicateCheck) {
       return res.status(409).json({ error: "You have already claimed your daily challenge reward today." });
     }
-    
+
     // Save daily play cooldown
     let playRecord;
     let useInMemory = false;
@@ -305,12 +305,12 @@ router.post("/claim", async (req: Request, res: Response) => {
       inMemoryPlays.push(playRecord);
       useInMemory = true;
     }
-    
+
     // Trigger on-chain payment
     let txHash: string;
     try {
       txHash = await sendDailyRewardOnChain(walletKey, session.rewardAmount);
-      
+
       // Update with txHash
       if (useInMemory) {
         const rec = inMemoryPlays.find(p => p.id === playRecord.id);
@@ -328,7 +328,7 @@ router.post("/claim", async (req: Request, res: Response) => {
       }
     } catch (contractErr: any) {
       console.error("DailyService: Failed to pay reward on-chain:", contractErr);
-      
+
       // Delete the cooldown so they can retry
       if (useInMemory) {
         const idx = inMemoryPlays.findIndex(p => p.id === playRecord.id);
@@ -343,10 +343,10 @@ router.post("/claim", async (req: Request, res: Response) => {
       }
       return res.status(502).json({ error: `On-chain reward payout failed: ${contractErr.message || contractErr}` });
     }
-    
+
     // Clear session
     dailySessions.delete(sessionId);
-    
+
     return res.json({
       success: true,
       txHash,

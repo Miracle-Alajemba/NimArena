@@ -3,10 +3,13 @@ import { PrismaClient } from "@prisma/client";
 import { createPublicClient, http, parseAbiItem } from "viem";
 import { base, baseSepolia } from "viem/chains";
 import {
-  getOrGenerateRoundLetters,
+  getOrGenerateRoundSourceWord,
   validateSubmission,
   signWordPotScore,
+  generateSourceWord,
 } from "../services/wordPotSession";
+import { getWordScore, canFormWord } from "../services/wordDuelSession";
+import { sendDailyRewardOnChain } from "../services/dailyReward";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -58,7 +61,7 @@ interface WordPotSessionObj {
   id: string;
   roundId: number;
   walletAddress: string;
-  letters: string;
+  sourceWord: string;
   foundWords: string[];
   score: number;
   startedAt: Date;
@@ -68,8 +71,8 @@ interface WordPotSessionObj {
 }
 const inMemorySessions = new Map<string, WordPotSessionObj>();
 
-// In-memory fallback for the shared round letter sets (when DB offline)
-const inMemoryRoundLetters = new Map<number, string>();
+// In-memory fallback for the shared round source words (when DB offline)
+const inMemoryRoundSourceWords = new Map<number, string>();
 
 // ─── GET /api/word-pot/rounds ────────────────────────────────────────────────
 router.get("/rounds", async (req: Request, res: Response) => {
@@ -149,15 +152,15 @@ router.post("/session/start", async (req: Request, res: Response) => {
   const userAddress = walletAddress.toLowerCase();
 
   try {
-    // Get (or generate once) the shared letter set for this round
-    let letters: string;
+    // Get (or generate once) the shared source word for this round
+    let sourceWord: string;
     try {
-      letters = await getOrGenerateRoundLetters(roundId);
+      sourceWord = await getOrGenerateRoundSourceWord(roundId);
     } catch (genErr) {
-      // Fallback: check in-memory round letters cache
-      if (inMemoryRoundLetters.has(roundId)) {
-        letters = inMemoryRoundLetters.get(roundId)!;
-        console.warn(`WordPotRoute: Used in-memory fallback letters for round ${roundId}`);
+      // Fallback: check in-memory round source words cache
+      if (inMemoryRoundSourceWords.has(roundId)) {
+        sourceWord = inMemoryRoundSourceWords.get(roundId)!;
+        console.warn(`WordPotRoute: Used in-memory fallback source word for round ${roundId}`);
       } else {
         throw genErr;
       }
@@ -194,7 +197,7 @@ router.post("/session/start", async (req: Request, res: Response) => {
       } else {
         const tempId = "wp_" + Math.random().toString(36).substring(2, 15) + "_" + Date.now();
         session = {
-          id: tempId, roundId, walletAddress: userAddress, letters,
+          id: tempId, roundId, walletAddress: userAddress, sourceWord,
           foundWords: [], score: 0, startedAt: new Date(),
           completedAt: null, submitted: false, proofHash: null,
         };
@@ -205,7 +208,7 @@ router.post("/session/start", async (req: Request, res: Response) => {
 
     return res.json({
       sessionId:   session.id,
-      letters,
+      sourceWord,
       duration:    60, // always 60 seconds of gameplay
       playerCount: 0,  // frontend can refresh from rounds endpoint
     });
@@ -250,17 +253,17 @@ router.post("/session/submit-word", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Session time limit exceeded" });
     }
 
-    // Get the shared letters for this round
-    let letters: string = (session as WordPotSessionObj).letters || "";
-    if (!letters) {
+    // Get the shared source word for this round
+    let sourceWord: string = (session as WordPotSessionObj).sourceWord || "";
+    if (!sourceWord) {
       try {
-        letters = await getOrGenerateRoundLetters(session.roundId);
+        sourceWord = await getOrGenerateRoundSourceWord(session.roundId);
       } catch {
-        letters = inMemoryRoundLetters.get(session.roundId) || "";
+        sourceWord = inMemoryRoundSourceWords.get(session.roundId) || "";
       }
     }
 
-    const validation = validateSubmission(word, letters, session.foundWords);
+    const validation = validateSubmission(word, sourceWord, session.foundWords);
     if (!validation.valid) {
       return res.json({ valid: false, error: validation.error, totalScore: session.score });
     }
@@ -281,7 +284,7 @@ router.post("/session/submit-word", async (req: Request, res: Response) => {
       } catch {
         const s = inMemorySessions.get(sessionId) || {
           id: sessionId, roundId: session.roundId, walletAddress: session.walletAddress,
-          letters, foundWords: session.foundWords, score: session.score,
+          sourceWord, foundWords: session.foundWords, score: session.score,
           startedAt: session.startedAt, completedAt: null, submitted: false, proofHash: null,
         };
         s.score = newScore;
@@ -345,7 +348,7 @@ router.post("/session/finalize", async (req: Request, res: Response) => {
       } catch {
         const s = inMemorySessions.get(sessionId) || {
           id: sessionId, roundId: session.roundId, walletAddress: session.walletAddress,
-          letters: "", foundWords: session.foundWords, score: session.score,
+          sourceWord: "", foundWords: session.foundWords, score: session.score,
           startedAt: session.startedAt, completedAt: new Date(), submitted: true, proofHash: proof,
         };
         s.completedAt = new Date(); s.submitted = true; s.proofHash = proof;
@@ -392,6 +395,224 @@ router.get("/session/:roundId/leaderboard", async (req: Request, res: Response) 
   } catch (error) {
     console.error("WordPotRoute: Failed to get leaderboard:", error);
     return res.status(500).json({ error: "Failed to fetch leaderboard" });
+  }
+});
+
+// ─── DAILY CHALLENGE ROUTES ───────────────────────────────────────────────
+
+const wordPotDailySessions = new Map<string, any>();
+
+// GET /api/word-pot/daily/status
+router.get("/daily/status", async (req: Request, res: Response) => {
+  const walletAddress = req.query.walletAddress as string;
+  if (!walletAddress) return res.status(400).json({ error: "Missing walletAddress" });
+  
+  const walletKey = walletAddress.trim().toLowerCase();
+  
+  try {
+    const todayDateStr = new Date().toISOString().split("T")[0];
+    const play = await prisma.wordPotDaily.findFirst({
+      where: { walletAddress: walletKey, date: todayDateStr },
+    });
+    
+    let played = false;
+    let claimed = false;
+    let nextAvailableAt = null;
+    let lastPlayedAt = null;
+    let txHash = null;
+    
+    if (play) {
+      played = true;
+      claimed = play.completed;
+      txHash = play.txHash;
+      if (play.completedAt) {
+        lastPlayedAt = play.completedAt;
+        const nextTs = new Date(todayDateStr + "T00:00:00.000Z").getTime() + 24 * 60 * 60 * 1000;
+        nextAvailableAt = new Date(nextTs).toISOString();
+      }
+    }
+    
+    return res.json({
+      played,
+      claimed,
+      nextAvailableAt,
+      lastPlayedAt,
+      txHash,
+      rewardAmount: "1.00",
+      targetScore: 50,
+    });
+  } catch (error) {
+    console.error("WordPotDaily: Status failed:", error);
+    return res.status(500).json({ error: "Status check failed" });
+  }
+});
+
+// GET /api/word-pot/daily/letters
+router.get("/daily/letters", async (req: Request, res: Response) => {
+  const walletAddress = req.query.walletAddress as string;
+  if (!walletAddress) return res.status(400).json({ error: "Missing walletAddress" });
+
+  const walletKey = walletAddress.trim().toLowerCase();
+  const todayDateStr = new Date().toISOString().split("T")[0];
+
+  try {
+    // 1. Check/Generate Daily Letters
+    let dailyLetters = await prisma.wordPotDailyLetters.findUnique({
+      where: { date: todayDateStr }
+    });
+
+    if (!dailyLetters) {
+      try {
+        const freshSourceWord = generateSourceWord();
+        dailyLetters = await prisma.wordPotDailyLetters.create({
+          data: { date: todayDateStr, letters: freshSourceWord }
+        });
+        console.log(`WordPotDaily: Generated fresh source word for ${todayDateStr}`);
+      } catch (e: any) {
+        // Handle race conditions
+        if (e.code === 'P2002') {
+          dailyLetters = await prisma.wordPotDailyLetters.findUnique({ where: { date: todayDateStr } });
+        } else {
+          throw e;
+        }
+      }
+    }
+
+    if (!dailyLetters) throw new Error("Failed to get daily letters");
+
+    // 2. Cooldown check
+    const existingPlay = await prisma.wordPotDaily.findUnique({
+      where: {
+        walletAddress_date: { walletAddress: walletKey, date: todayDateStr }
+      }
+    });
+
+    if (existingPlay && existingPlay.completed) {
+      const nextTs = new Date(todayDateStr + "T00:00:00.000Z").getTime() + 24 * 60 * 60 * 1000;
+      return res.status(409).json({
+        error: "Cooldown active. You can play again after 24 hours.",
+        nextAvailableAt: new Date(nextTs).toISOString(),
+      });
+    }
+
+    // 3. Start memory session
+    const sessionId = "wp_daily_" + Math.random().toString(36).substring(2, 15);
+    wordPotDailySessions.set(sessionId, {
+      sessionId,
+      walletAddress: walletKey,
+      sourceWord: dailyLetters.letters,
+      claimedWords: new Set<string>(),
+      score: 0,
+      targetScore: 50,
+      expiresAt: Date.now() + 15 * 60 * 1000,
+    });
+
+    return res.json({
+      sessionId,
+      sourceWord: dailyLetters.letters,
+      expiresAt: Date.now() + 15 * 60 * 1000
+    });
+  } catch (error) {
+    console.error("WordPotDaily: Failed to get letters:", error);
+    return res.status(500).json({ error: "Failed to get letters" });
+  }
+});
+
+// POST /api/word-pot/daily/submit-word
+router.post("/daily/submit-word", async (req: Request, res: Response) => {
+  const { sessionId, word } = req.body;
+  if (!sessionId || !word) return res.status(400).json({ error: "Missing sessionId or word" });
+
+  const session = wordPotDailySessions.get(sessionId);
+  if (!session) return res.status(404).json({ error: "Session not found or expired" });
+
+  if (Date.now() > session.expiresAt) {
+    wordPotDailySessions.delete(sessionId);
+    return res.status(410).json({ error: "Session expired." });
+  }
+
+  const cleanWord = word.trim().toLowerCase();
+
+  // Validate using existing logic
+  const validation = validateSubmission(cleanWord, session.sourceWord, Array.from(session.claimedWords));
+  if (!validation.valid) {
+    return res.status(400).json({ error: validation.error });
+  }
+
+  const points = getWordScore(cleanWord);
+  session.claimedWords.add(cleanWord);
+  session.score += points;
+
+  return res.json({
+    valid: true,
+    word: cleanWord,
+    scoreAdded: points,
+    totalScore: session.score,
+    targetScore: session.targetScore
+  });
+});
+
+// POST /api/word-pot/daily/claim
+router.post("/daily/claim", async (req: Request, res: Response) => {
+  const { sessionId, walletAddress } = req.body;
+  if (!sessionId || !walletAddress) return res.status(400).json({ error: "Missing parameters" });
+
+  const session = wordPotDailySessions.get(sessionId);
+  if (!session) return res.status(404).json({ error: "Session not found" });
+
+  const walletKey = walletAddress.trim().toLowerCase();
+  if (session.walletAddress !== walletKey) return res.status(403).json({ error: "Invalid wallet" });
+
+  if (session.score < session.targetScore) {
+    return res.status(400).json({ error: `Need ${session.targetScore} points, got ${session.score}` });
+  }
+
+  const todayDateStr = new Date().toISOString().split("T")[0];
+
+  try {
+    const existing = await prisma.wordPotDaily.findUnique({
+      where: { walletAddress_date: { walletAddress: walletKey, date: todayDateStr } }
+    });
+
+    if (existing && existing.completed) {
+      return res.status(409).json({ error: "Already claimed today." });
+    }
+
+    // Trigger on-chain payment
+    let txHash: string;
+    try {
+      txHash = await sendDailyRewardOnChain(walletKey, "1.0");
+    } catch (contractErr: any) {
+      return res.status(502).json({ error: `Payout failed: ${contractErr.message}` });
+    }
+
+    // Save to DB
+    await prisma.wordPotDaily.upsert({
+      where: { walletAddress_date: { walletAddress: walletKey, date: todayDateStr } },
+      update: {
+        score: session.score,
+        foundWords: Array.from(session.claimedWords),
+        completed: true,
+        completedAt: new Date(),
+        txHash
+      },
+      create: {
+        walletAddress: walletKey,
+        date: todayDateStr,
+        score: session.score,
+        foundWords: Array.from(session.claimedWords),
+        completed: true,
+        completedAt: new Date(),
+        txHash
+      }
+    });
+
+    wordPotDailySessions.delete(sessionId);
+
+    return res.json({ success: true, txHash });
+  } catch (error) {
+    console.error("WordPotDaily: Claim failed:", error);
+    return res.status(500).json({ error: "Claim failed" });
   }
 });
 

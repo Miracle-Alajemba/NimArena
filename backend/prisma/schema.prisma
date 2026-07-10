@@ -105,3 +105,21 @@ model DailyChallengePlay {
 
   @@unique([walletAddress, playedDate])
 }
+
+model WordPotDailyLetters {
+  date    String @id // YYYY-MM-DD
+  letters String
+}
+
+model WordPotDaily {
+  id            Int       @id @default(autoincrement())
+  walletAddress String
+  date          String    // YYYY-MM-DD
+  foundWords    String[]
+  score         Int       @default(0)
+  completed     Boolean   @default(false)
+  completedAt   DateTime?
+  txHash        String?
+
+  @@unique([walletAddress, date])
+}

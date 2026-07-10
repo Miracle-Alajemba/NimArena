@@ -163,31 +163,31 @@ async function pollExpiredWordDuelRounds() {
   try {
     const privateKey = process.env.BACKEND_SIGNER_KEY;
     if (!privateKey || privateKey === "0x_YOUR_BACKEND_SIGNER_PRIVATE_KEY_HERE") return;
-    
+
     if (CONTRACT_ADDRESS === "0x0000000000000000000000000000000000000000") return;
 
     const provider = new ethers.JsonRpcProvider(BASE_RPC_URL);
     const wallet = new ethers.Wallet(privateKey, provider);
-    
+
     const abi = [
       "function finalizeWordDuel(uint256 duelId) external",
       "function getWordDuelRound(uint256 duelId) external view returns (address, address, uint256, uint64, uint64, address, uint256, uint256, uint256, bool)",
       "function nextDuelId() external view returns (uint256)"
     ];
-    
+
     const contract = new ethers.Contract(CONTRACT_ADDRESS, abi, wallet);
-    
+
     const maxRoundId = await contract.nextDuelId();
     if (!maxRoundId) return;
 
     const currentTs = Math.floor(Date.now() / 1000);
-    
+
     for (let i = 1; i < Number(maxRoundId); i++) {
       try {
         const round = await contract.getWordDuelRound(i);
         const endTime = Number(round[4]);
         const finalized = round[9];
-        
+
         if (endTime > 0 && currentTs > endTime && !finalized) {
           console.log(`EventSync: Found expired unfinalized word duel round ${i}. Finalizing...`);
           const tx = await contract.finalizeWordDuel(i);
@@ -210,32 +210,32 @@ async function pollExpiredTriviaRounds() {
   try {
     const privateKey = process.env.BACKEND_SIGNER_KEY;
     if (!privateKey || privateKey === "0x_YOUR_BACKEND_SIGNER_PRIVATE_KEY_HERE") return;
-    
+
     if (CONTRACT_ADDRESS === "0x0000000000000000000000000000000000000000") return;
 
     const provider = new ethers.JsonRpcProvider(BASE_RPC_URL);
     const wallet = new ethers.Wallet(privateKey, provider);
-    
+
     // We only need the finalizeTrivia abi and a way to read rounds
     const abi = [
       "function finalizeTrivia(uint256 roundId) external",
       "function getTriviaRound(uint256 roundId) external view returns (address, address, uint256, uint64, uint64, address, uint256, uint256, uint256, bool)",
       "function nextTriviaRoundId() external view returns (uint256)"
     ];
-    
+
     const contract = new ethers.Contract(CONTRACT_ADDRESS, abi, wallet);
-    
+
     const maxRoundId = await contract.nextTriviaRoundId();
     if (!maxRoundId) return;
 
     const currentTs = Math.floor(Date.now() / 1000);
-    
+
     for (let i = 1; i < Number(maxRoundId); i++) {
       try {
         const round = await contract.getTriviaRound(i);
         const endTime = Number(round[4]);
         const finalized = round[9];
-        
+
         // If expired and not finalized, call finalizeTrivia
         if (endTime > 0 && currentTs > endTime && !finalized) {
           console.log(`EventSync: Found expired unfinalized trivia round ${i}. Finalizing...`);

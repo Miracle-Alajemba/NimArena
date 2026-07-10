@@ -5,21 +5,28 @@ import { Loader2 } from "lucide-react";
 import { PremiumLoader } from "../layout/PremiumLoader";
 import { wordEmoji, scoreForLength } from "../../lib/gameLogic";
 
+import { useApi } from "../../hooks/useApi";
+import { formatToken } from "../../lib/formatters";
+
 interface WordPotGameProps {
   roundId: number;
   entryFee: string;
+  poolBalance: string;
+  playerCount: number;
+  currency: "USDT" | "NIM";
   onComplete: (sessionId: string, score: number, proof: string) => void;
   onExit: () => void;
 }
 
 
 
-export function WordPotGame({ roundId, entryFee, onComplete, onExit }: WordPotGameProps) {
+export function WordPotGame({ roundId, entryFee, poolBalance, playerCount, currency, onComplete, onExit }: WordPotGameProps) {
   const { walletAddress } = useNimiq();
   const { startSession, submitWord, finalizeSession } = useWordPot();
+  const { get } = useApi();
 
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [letters, setLetters] = useState<string>("");
+  const [sourceWord, setSourceWord] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [timesUp, setTimesUp] = useState(false);
 
@@ -32,6 +39,9 @@ export function WordPotGame({ roundId, entryFee, onComplete, onExit }: WordPotGa
   const [feedback, setFeedback] = useState<{ msg: string; pts: number; type: "success" | "error" } | null>(null);
   const [floatPts, setFloatPts] = useState<{ id: number; pts: number }[]>([]);
   const [floatIdCounter, setFloatIdCounter] = useState(0);
+
+  const [currentRank, setCurrentRank] = useState<number | null>(null);
+  const [showLeadToast, setShowLeadToast] = useState(false);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -75,7 +85,7 @@ export function WordPotGame({ roundId, entryFee, onComplete, onExit }: WordPotGa
       try {
         const data = await startSession(roundId, walletAddress);
         setSessionId(data.sessionId);
-        setLetters(data.letters);
+        setSourceWord(data.sourceWord);
         setTimeLeft(data.duration || 60);
         setLoading(false);
         initAudio();
@@ -87,17 +97,48 @@ export function WordPotGame({ roundId, entryFee, onComplete, onExit }: WordPotGa
     init();
   }, [roundId, walletAddress]);
 
-  // Timer
+  // Timer & Polling
   useEffect(() => {
     if (loading || !sessionId) return;
+    
+    // Timer
     const t = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) { clearInterval(t); handleTimesUp(); return 0; }
         return prev - 1;
       });
     }, 1000);
-    return () => clearInterval(t);
-  }, [loading, sessionId]);
+
+    // Leaderboard Polling
+    const pollLeaderboard = async () => {
+      try {
+        const board = await get(`/api/word-pot/session/${roundId}/leaderboard`);
+        if (Array.isArray(board) && walletAddress) {
+          const myRank = board.findIndex(b => b.walletAddress.toLowerCase() === walletAddress.toLowerCase()) + 1;
+          if (myRank > 0) {
+            setCurrentRank(prev => {
+              // Show toast if we just jumped to #1
+              if (prev !== null && prev > 1 && myRank === 1) {
+                setShowLeadToast(true);
+                setTimeout(() => setShowLeadToast(false), 3000);
+              }
+              return myRank;
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Failed to poll leaderboard", err);
+      }
+    };
+
+    pollLeaderboard(); // Initial poll
+    const p = setInterval(pollLeaderboard, 10000); // Poll every 10s
+
+    return () => {
+      clearInterval(t);
+      clearInterval(p);
+    };
+  }, [loading, sessionId, roundId, walletAddress, get]);
 
   // Global keyboard
   useEffect(() => {
@@ -167,10 +208,10 @@ export function WordPotGame({ roundId, entryFee, onComplete, onExit }: WordPotGa
     }
   };
 
-  if (loading && !letters) return <PremiumLoader text="Joining Word Pot..." />;
+  if (loading && !sourceWord) return <PremiumLoader text="Joining Word Pot..." />;
 
   const timerColor = timeLeft > 19 ? "#F1F1F3" : timeLeft > 9 ? "#F59E0B" : "#EF4444";
-  const letterChips = letters.toUpperCase().split("");
+  const letterChips = sourceWord.toUpperCase().split("");
 
   return (
     <div className="pb-24 px-4 w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto pt-5 flex flex-col page-fade-in">
@@ -186,22 +227,39 @@ export function WordPotGame({ roundId, entryFee, onComplete, onExit }: WordPotGa
       )}
 
       {/* Banner */}
-      <div className="flex justify-center mb-4">
+      <div className="flex flex-col items-center justify-center gap-1 mb-4">
         <div className="bg-[#13131A] border border-[#2B2B3D] px-4 py-1.5 rounded-full text-xs font-bold font-mono text-gray-400">
           🏺 Word Pot — Round #{roundId}
         </div>
+        <div className="flex gap-4 text-xs font-bold uppercase tracking-wider mt-1">
+          <span className="text-[#F59E0B]">💰 Prize Pool: {formatToken(poolBalance, currency === "USDT" ? 6 : 18)} {currency}</span>
+          <span className="text-gray-400">👥 {playerCount} players</span>
+        </div>
       </div>
+
+      {showLeadToast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[#10B981] text-white px-6 py-2 rounded-full font-bold uppercase tracking-widest shadow-[0_0_20px_rgba(16,185,129,0.5)] animate-bounce">
+          🔥 You're in the lead!
+        </div>
+      )}
 
       {/* HUD */}
       <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-2 bg-[#13131A] px-4 py-2.5 rounded-2xl border border-[#1F1F2E]">
-          <span
-            className="text-3xl font-bold tabular-nums"
-            style={{ fontFamily: "'JetBrains Mono', monospace", color: timerColor,
-              ...(timeLeft <= 9 ? { animation: "dot-pulse 0.8s ease-in-out infinite" } : {}) }}
-          >
-            {String(timeLeft).padStart(2, "0")}s
-          </span>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 bg-[#13131A] px-4 py-2.5 rounded-2xl border border-[#1F1F2E]">
+            <span
+              className="text-3xl font-bold tabular-nums"
+              style={{ fontFamily: "'JetBrains Mono', monospace", color: timerColor,
+                ...(timeLeft <= 9 ? { animation: "dot-pulse 0.8s ease-in-out infinite" } : {}) }}
+            >
+              {String(timeLeft).padStart(2, "0")}s
+            </span>
+          </div>
+          {currentRank !== null && (
+             <div className="text-[10px] font-bold uppercase text-[#10B981] tracking-wider bg-[#10B981]/10 px-2 py-1 rounded-md text-center border border-[#10B981]/20">
+               📊 Your Rank: #{currentRank} of {playerCount}
+             </div>
+          )}
         </div>
 
         {/* Score with float-up effect */}
@@ -226,26 +284,32 @@ export function WordPotGame({ roundId, entryFee, onComplete, onExit }: WordPotGa
       </div>
 
       {/* Letter Tiles */}
-      <div
-        className={`flex flex-wrap gap-2 justify-center mb-5 p-5 rounded-2xl bg-[#13131A] border border-[#1F1F2E] shadow-inner ${
-          tileState === "success" ? "tile-success" : tileState === "error" ? "tile-error" : ""
-        }`}
-      >
-        {letterChips.map((letter, i) => (
-          <div
-            key={i}
-            className="w-14 h-14 rounded-xl flex items-center justify-center text-white text-2xl font-extrabold shadow-[0_4px_12px_rgba(0,0,0,0.4)] select-none transition-all"
-            style={{
-              fontFamily: "'Syne', sans-serif",
-              background: "#1E1E2E",
-              border: "1px solid #F59E0B",
-              minWidth: 56,
-              minHeight: 56,
-            }}
-          >
-            {letter}
-          </div>
-        ))}
+      <div className="text-center mb-5">
+        <h3 className="text-[10px] font-bold text-[#F59E0B] uppercase tracking-widest mb-3">
+          SOURCE WORD
+        </h3>
+        <div
+          className={`flex flex-wrap gap-2 justify-center p-5 rounded-2xl bg-[#13131A] border border-[#1F1F2E] shadow-inner ${
+            tileState === "success" ? "tile-success" : tileState === "error" ? "tile-error" : ""
+          }`}
+        >
+          {letterChips.map((letter, i) => (
+            <div
+              key={i}
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white text-2xl font-bold shadow-[0_4px_12px_rgba(0,0,0,0.4)] select-none transition-all"
+              style={{
+                fontFamily: "'Syne', sans-serif",
+                fontWeight: "bold",
+                background: "#1E1E2E",
+                border: "1px solid #F59E0B",
+                minWidth: 40,
+                minHeight: 40,
+              }}
+            >
+              {letter}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Input panel */}

@@ -5,14 +5,16 @@ import { useNimiq } from "../../hooks/useNimiq";
 import { useUSDTBalance } from "../../hooks/useUSDTBalance";
 import { formatToken } from "../../lib/formatters";
 import { NIM_ADDRESS, CONTRACT_ADDRESS, USDT_ADDRESS } from "../../config/constants";
-import { Plus, Users, Clock, Play } from "lucide-react";
+import { Plus, Users, Clock, Play, Target, Flame } from "lucide-react";
 import { publicClient } from "../../lib/viemClient";
 
 interface WordPotLobbyProps {
-  onStartWordPot: (roundId: number, entryFee: string) => void;
+  onStartWordPot: (roundId: number, entryFee: string, poolBalance: string, playerCount: number, currency: "USDT"|"NIM") => void;
+  onStartPractice: () => void;
+  onStartDaily: () => void;
 }
 
-export function WordPotLobby({ onStartWordPot }: WordPotLobbyProps) {
+export function WordPotLobby({ onStartWordPot, onStartPractice, onStartDaily }: WordPotLobbyProps) {
   const { getRounds } = useWordPot();
   const { enterWordPot, createWordPotRound, txLoading, txError } = useContract();
   const { walletAddress } = useNimiq();
@@ -127,9 +129,28 @@ export function WordPotLobby({ onStartWordPot }: WordPotLobbyProps) {
         <button
           onClick={() => setShowCreateModal(true)}
           style={{ minHeight: "44px" }}
-          className="flex items-center gap-1 px-4 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-white text-xs font-bold uppercase transition-all duration-200"
+          className="flex items-center gap-1 px-4 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-white text-xs font-bold uppercase transition-all duration-200 shadow-lg shadow-[#F59E0B]/20"
         >
           <Plus className="w-4 h-4" /> Create
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2 mb-6 p-1 bg-[#13131A] rounded-xl border border-[#2B2B3D]">
+        <button className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-[#7C3AED] text-white shadow-lg">
+          <Play className="w-3.5 h-3.5 fill-current" /> Live Pots
+        </button>
+        <button 
+          onClick={onStartPractice}
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-white hover:bg-[#1A1A24] transition-colors"
+        >
+          <Target className="w-3.5 h-3.5" /> Practice
+        </button>
+        <button 
+          onClick={onStartDaily}
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-white hover:bg-[#1A1A24] transition-colors"
+        >
+          <Flame className="w-3.5 h-3.5" /> Daily
         </button>
       </div>
       
@@ -257,7 +278,7 @@ export function WordPotLobby({ onStartWordPot }: WordPotLobbyProps) {
                   </button>
                 ) : hasEntered ? (
                   <button
-                    onClick={() => onStartWordPot(round.roundId, round.entryFee)}
+                    onClick={() => onStartWordPot(round.roundId, round.entryFee, round.poolBalance, round.playerCount, selectedCurrency)}
                     style={{ minHeight: "44px" }}
                     className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#10B981] hover:bg-[#34D399] text-white text-xs font-bold uppercase transition-colors"
                   >

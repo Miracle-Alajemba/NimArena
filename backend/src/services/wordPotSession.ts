@@ -25,7 +25,7 @@ const roundLettersCache = new Map<number, string>();
  * @param roundId - The Word Pot round ID from the smart contract.
  * @returns The letter string for this round (11 letters by default).
  */
-export async function getOrGenerateRoundLetters(roundId: number): Promise<string> {
+export async function getOrGenerateRoundSourceWord(roundId: number): Promise<string> {
   // 1. Fast-path: check in-memory cache first
   if (roundLettersCache.has(roundId)) {
     const cached = roundLettersCache.get(roundId)!;
@@ -54,8 +54,8 @@ export async function getOrGenerateRoundLetters(roundId: number): Promise<string
   }
 
   // 3. Generate fresh letters for this round (first player to join triggers this)
-  console.log(`WordPotSession: Generating new shared letter set for round ${roundId}...`);
-  const letters = generateLetters("medium");
+  console.log(`WordPotSession: Generating new shared source word for round ${roundId}...`);
+  const letters = generateSourceWord();
 
   // 4. Persist to DB (ignore error — in-memory cache is the fallback)
   try {
@@ -74,41 +74,21 @@ export async function getOrGenerateRoundLetters(roundId: number): Promise<string
 }
 
 /**
- * Generates a random set of 11 letters guaranteed to form at least 10 valid words.
- * Reuses the same logic as wordDuelSession.generateLetters.
- * Performs up to 50 attempts before throwing an error.
+ * Generates a random 8-12 letter word guaranteed to form at least 10 valid smaller words.
  */
-function generateLetters(difficulty: "easy" | "medium" | "hard" = "medium"): string {
-  const targetLength = difficulty === "easy" ? 10 : difficulty === "medium" ? 11 : 12;
-  const alphabet = "abcdefghijklmnopqrstuvwxyz";
-  const vowels = "aeiou";
-
+export function generateSourceWord(): string {
   let attempts = 0;
   while (attempts < 50) {
     attempts++;
 
     const sourceWord = getRandomSourceWord();
-    const lettersArr = sourceWord.split("");
-
-    while (lettersArr.length < targetLength) {
-      const addVowel = Math.random() < 0.4;
-      const charList = addVowel ? vowels : alphabet;
-      lettersArr.push(charList[Math.floor(Math.random() * charList.length)]);
-    }
-
-    // Shuffle
-    for (let i = lettersArr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [lettersArr[i], lettersArr[j]] = [lettersArr[j], lettersArr[i]];
-    }
-
-    const candidateLetters = lettersArr.join("");
+    if (sourceWord.length < 8 || sourceWord.length > 12) continue;
 
     // Verify at least 10 valid words of 3+ letters
     let validWordCount = 0;
     if (wordSet.size > 0) {
       for (const dictWord of wordSet) {
-        if (dictWord.length >= 3 && canFormWord(dictWord, candidateLetters)) {
+        if (dictWord.length >= 3 && dictWord !== sourceWord && canFormWord(dictWord, sourceWord)) {
           validWordCount++;
           if (validWordCount >= 10) break;
         }
@@ -118,12 +98,12 @@ function generateLetters(difficulty: "easy" | "medium" | "hard" = "medium"): str
     }
 
     if (validWordCount >= 10) {
-      console.log(`WordPotSession: Generated letter set '${candidateLetters}' in ${attempts} attempt(s).`);
-      return candidateLetters;
+      console.log(`WordPotSession: Generated source word '${sourceWord}' in ${attempts} attempt(s).`);
+      return sourceWord;
     }
   }
 
-  throw new Error("WordPotSession: Failed to generate a valid letter set after 50 attempts");
+  throw new Error("WordPotSession: Failed to generate a valid source word after 50 attempts");
 }
 
 /**
