@@ -176,7 +176,22 @@ router.post("/session/start", async (req: Request, res: Response) => {
       });
 
       if (existing) {
-        session = existing;
+        const startedTime = new Date(existing.startedAt).getTime();
+        if (existing.completedAt || Date.now() - startedTime > 65_000) {
+          session = await prisma.wordPotSession.update({
+            where: { id: existing.id },
+            data: {
+              startedAt: new Date(),
+              completedAt: null,
+              foundWords: [],
+              score: 0,
+              submitted: false,
+              proofHash: null,
+            },
+          });
+        } else {
+          session = existing;
+        }
       } else {
         session = await prisma.wordPotSession.create({
           data: {
@@ -193,6 +208,15 @@ router.post("/session/start", async (req: Request, res: Response) => {
         (s) => s.roundId === roundId && s.walletAddress === userAddress
       );
       if (existingInMem) {
+        const startedTime = new Date(existingInMem.startedAt).getTime();
+        if (existingInMem.completedAt || Date.now() - startedTime > 65_000) {
+          existingInMem.startedAt = new Date();
+          existingInMem.completedAt = null;
+          existingInMem.foundWords = [];
+          existingInMem.score = 0;
+          existingInMem.submitted = false;
+          existingInMem.proofHash = null;
+        }
         session = existingInMem;
       } else {
         const tempId = "wp_" + Math.random().toString(36).substring(2, 15) + "_" + Date.now();

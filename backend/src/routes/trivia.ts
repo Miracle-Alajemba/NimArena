@@ -121,12 +121,29 @@ router.get("/rounds", async (req: Request, res: Response) => {
   }
 });
 
+const FALLBACK_PRACTICE_QUESTIONS = [
+  { id: "q1", question: "What is the native cryptocurrency of the Nimiq network?", optionA: "NIM", optionB: "BTC", optionC: "ETH", optionD: "SOL", correctIdx: 0, category: "Crypto", difficulty: "easy" },
+  { id: "q2", question: "Which algorithm does Nimiq 2.0 use for consensus?", optionA: "Proof of Work", optionB: "Proof of Stake (Albatross)", optionC: "Proof of Authority", optionD: "Delegated PoS", correctIdx: 1, category: "Crypto", difficulty: "medium" },
+  { id: "q3", question: "What is the block target time in Nimiq Albatross?", optionA: "1 second", optionB: "60 seconds", optionC: "10 minutes", optionD: "12 seconds", correctIdx: 0, category: "Crypto", difficulty: "medium" },
+  { id: "q4", question: "What smart contract network is NimArena deployed on?", optionA: "Base", optionB: "Ethereum Mainnet", optionC: "Bitcoin", optionD: "Solana", correctIdx: 0, category: "Crypto", difficulty: "easy" },
+  { id: "q5", question: "In Web3, what does 'Gas' represent?", optionA: "Network transaction fee", optionB: "Internet speed", optionC: "Wallet balance", optionD: "Storage space", correctIdx: 0, category: "Crypto", difficulty: "easy" },
+  { id: "q6", question: "Which planet is known as the Red Planet?", optionA: "Venus", optionB: "Mars", optionC: "Jupiter", optionD: "Saturn", correctIdx: 1, category: "General", difficulty: "easy" },
+  { id: "q7", question: "What is the capital city of Japan?", optionA: "Beijing", optionB: "Seoul", optionC: "Tokyo", optionD: "Bangkok", correctIdx: 2, category: "General", difficulty: "easy" },
+  { id: "q8", question: "How many letters are in the English alphabet?", optionA: "24", optionB: "25", optionC: "26", optionD: "27", correctIdx: 2, category: "General", difficulty: "easy" },
+  { id: "q9", question: "What is the chemical symbol for Gold?", optionA: "Ag", optionB: "Au", optionC: "Fe", optionD: "Pb", correctIdx: 1, category: "Science", difficulty: "medium" },
+  { id: "q10", question: "Who painted the Mona Lisa?", optionA: "Vincent van Gogh", optionB: "Pablo Picasso", optionC: "Leonardo da Vinci", optionD: "Michelangelo", correctIdx: 2, category: "Art", difficulty: "easy" },
+  { id: "q11", question: "What is the largest ocean on Earth?", optionA: "Atlantic Ocean", optionB: "Indian Ocean", optionC: "Arctic Ocean", optionD: "Pacific Ocean", correctIdx: 3, category: "General", difficulty: "easy" },
+  { id: "q12", question: "Which element has atomic number 1?", optionA: "Helium", optionB: "Hydrogen", optionC: "Oxygen", optionD: "Carbon", correctIdx: 1, category: "Science", difficulty: "easy" },
+];
+
 // GET /api/trivia/practice/questions
 router.get("/practice/questions", async (req: Request, res: Response) => {
   try {
-    const totalQuestions = await prisma.triviaQuestion.count();
+    const totalQuestions = await prisma.triviaQuestion.count().catch(() => 0);
     if (totalQuestions < 10) {
-      return res.status(500).json({ error: "Not enough questions in database." });
+      console.log("TriviaService: Using fallback practice questions.");
+      const shuffled = [...FALLBACK_PRACTICE_QUESTIONS].sort(() => 0.5 - Math.random());
+      return res.json(shuffled.slice(0, 10));
     }
 
     // Fetch all question IDs
@@ -150,19 +167,18 @@ router.get("/practice/questions", async (req: Request, res: Response) => {
         optionB: true,
         optionC: true,
         optionD: true,
-        correctIdx: true, // We return correctIdx for client-side evaluation
+        correctIdx: true,
         category: true,
         difficulty: true
       }
     });
 
-    // Shuffle the result to match the random selected order (findMany doesn't preserve IN order)
     const sortedQuestions = selectedIds.map(id => questions.find(q => q.id === id)).filter(Boolean);
-
     return res.json(sortedQuestions);
   } catch (error) {
-    console.error("TriviaService: Failed to fetch practice questions:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    console.warn("TriviaService: DB error during practice questions fetch, serving fallback questions:", error);
+    const shuffled = [...FALLBACK_PRACTICE_QUESTIONS].sort(() => 0.5 - Math.random());
+    return res.json(shuffled.slice(0, 10));
   }
 });
 
