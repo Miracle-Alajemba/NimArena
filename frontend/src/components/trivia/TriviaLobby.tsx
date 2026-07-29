@@ -24,11 +24,12 @@ interface TriviaRound {
 
 interface TriviaLobbyProps {
   onStartTrivia: (roundId: number, entryFee: string) => void;
+  onStartPractice: () => void;
 }
 
 export function TriviaLobby({ onStartTrivia, onStartPractice }: TriviaLobbyProps) {
   const { get } = useApi();
-  const { enterTrivia, createTriviaRound, txLoading, txError } = useContract();
+  const { enterTrivia, createTriviaRound, finalizeTrivia, txLoading, txError } = useContract();
   const { walletAddress } = useNimiq();
   const { refresh: refreshBalance } = useUSDTBalance();
 

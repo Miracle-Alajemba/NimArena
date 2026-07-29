@@ -53,7 +53,7 @@ export function useWordPot() {
         });
         return res as {
           sessionId: string;
-          letters: string;
+          sourceWord: string;
           duration: number;
           playerCount: number;
         };

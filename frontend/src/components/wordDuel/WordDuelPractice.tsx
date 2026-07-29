@@ -175,7 +175,6 @@ export function WordDuelPractice({ onExit, onChallengeReal }: WordDuelPracticePr
       <button
         onClick={startGame}
         disabled={loading}
-        style={{ minHeight: 52 }}
         className="btn-press w-full rounded-xl bg-[#10B981] hover:bg-[#059669] text-white font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 disabled:opacity-50 mb-4"
         style={{ fontFamily: "'Inter', sans-serif", minHeight: 52 }}
       >
