@@ -89,8 +89,8 @@ export function WordPotGame({ roundId, entryFee, poolBalance, playerCount, curre
         setTimeLeft(data.duration || 60);
         setLoading(false);
         initAudio();
-      } catch {
-        alert("Failed to start session.");
+      } catch (err: any) {
+        console.error("WordPotGame: Failed to start session", err);
         onExit();
       }
     }

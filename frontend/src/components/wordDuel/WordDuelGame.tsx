@@ -79,8 +79,8 @@ export function WordDuelGame({ roundId, entryFee, onComplete, onExit }: WordDuel
         setTimeLeft(data.duration || 60);
         setLoading(false);
         initAudio();
-      } catch {
-        alert("Failed to start session.");
+      } catch (err: any) {
+        console.error("WordDuelGame: Failed to start session", err);
         onExit();
       }
     }

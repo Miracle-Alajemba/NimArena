@@ -54,8 +54,8 @@ export function TriviaGame({ roundId, entryFee, onComplete, onExit }: TriviaGame
           walletAddress: walletAddress.toLowerCase(),
         });
         setSessionId(res.sessionId);
-      } catch {
-        alert("Session setup failed. Ensure backend server is running.");
+      } catch (err: any) {
+        console.error("TriviaGame: Session setup failed", err);
         onExit();
       }
     }

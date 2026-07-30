@@ -82,8 +82,15 @@ export function WordDuelPractice({ onExit, onChallengeReal }: WordDuelPracticePr
       setTimeLeft(data.duration || 60);
       setScore(0); setFoundWords([]); setLongestWord(""); setCurrentWord("");
       setPhase("playing");
-    } catch { alert("Failed to start practice."); }
-    finally { setLoading(false); }
+    } catch (err) {
+      console.warn("WordDuelPractice: API start failed, loading practice fallback letters:", err);
+      const fallbackLetters = "NIMIQUARENA";
+      setSessionId(`practice_fallback_${Date.now()}`);
+      setLetters(fallbackLetters);
+      setTimeLeft(60);
+      setScore(0); setFoundWords([]); setLongestWord(""); setCurrentWord("");
+      setPhase("playing");
+    } finally { setLoading(false); }
   };
 
   // Timer
