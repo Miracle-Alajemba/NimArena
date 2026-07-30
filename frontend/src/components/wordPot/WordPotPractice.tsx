@@ -25,6 +25,7 @@ export function WordPotPractice({ onExit, onChallengeReal }: WordPotPracticeProp
   const [timeLeftMs, setTimeLeftMs] = useState<number>(60000);
   const [isGameOver, setIsGameOver] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -293,6 +294,25 @@ export function WordPotPractice({ onExit, onChallengeReal }: WordPotPracticeProp
               Play for Real 🏺
             </button>
           </div>
+
+          {/* Share Result */}
+          <button
+            onClick={async () => {
+              const text = `🏺 I scored ${score} points (${foundWords.length} words) in Word Pot Practice on NimArena!\n\nThink you can beat me? 👉 https://nimarena.vercel.app\n#NimArena #WordPot #Web3Gaming`;
+              try {
+                if (navigator.share) {
+                  await navigator.share({ title: "NimArena — Word Pot", text });
+                } else {
+                  await navigator.clipboard.writeText(text);
+                }
+              } catch { await navigator.clipboard.writeText(text).catch(() => {}); }
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }}
+            className="w-full mt-3 py-3 rounded-xl bg-[#1F1F2E] hover:bg-gray-800 text-gray-300 font-bold text-xs uppercase tracking-widest border border-gray-700 transition-colors"
+          >
+            {copied ? "✅ Copied!" : "📋 Share Result"}
+          </button>
         </div>
       </div>
     );

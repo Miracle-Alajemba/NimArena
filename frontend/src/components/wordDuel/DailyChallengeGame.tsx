@@ -34,6 +34,7 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
   // Claim/Payout state
   const [claiming, setClaiming] = useState(false);
   const [claimHash, setClaimHash] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const timerRef = useRef<any>(null);
 
@@ -211,9 +212,28 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
         <button
           onClick={onComplete}
           style={{ minHeight: "48px" }}
-          className="w-full rounded-xl bg-[#10B981] hover:bg-[#34D399] text-white text-xs font-extrabold uppercase transition-colors"
+          className="w-full rounded-xl bg-[#10B981] hover:bg-[#34D399] text-white text-xs font-extrabold uppercase transition-colors mb-3"
         >
           Return to Lobby
+        </button>
+
+        {/* Share Result */}
+        <button
+          onClick={async () => {
+            const text = `⚔️ I scored ${score} points in the NimArena Daily Challenge and earned ${rewardAmount} USDT! 💰\n\nTry it yourself 👉 https://nimarena.vercel.app\n#NimArena #DailyChallenge #Web3Gaming`;
+            try {
+              if (navigator.share) {
+                await navigator.share({ title: "NimArena — Daily Challenge", text });
+              } else {
+                await navigator.clipboard.writeText(text);
+              }
+            } catch { await navigator.clipboard.writeText(text).catch(() => {}); }
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          }}
+          className="w-full py-3 rounded-xl bg-[#1F1F2E] hover:bg-gray-800 text-gray-300 font-bold text-xs uppercase tracking-widest border border-gray-700 transition-colors"
+        >
+          {copied ? "✅ Copied!" : "📋 Share Result"}
         </button>
       </div>
     );

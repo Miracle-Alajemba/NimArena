@@ -33,6 +33,7 @@ export function DailyWordPotGame({ onExit, onShowRipple }: DailyWordPotGameProps
   // Claim/Payout state
   const [claiming, setClaiming] = useState(false);
   const [claimHash, setClaimHash] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const timerRef = useRef<any>(null);
 
@@ -206,9 +207,28 @@ export function DailyWordPotGame({ onExit, onShowRipple }: DailyWordPotGameProps
           </div>
           <button
             onClick={onExit}
-            className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-white text-sm font-bold uppercase transition-all"
+            className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-white text-sm font-bold uppercase transition-all mb-3"
           >
             Back to Word Pot
+          </button>
+
+          {/* Share Result */}
+          <button
+            onClick={async () => {
+              const text = `🎩 I completed the NimArena Daily Word Pot and earned ${rewardAmount} USDT! 🏆\n\nScore: ${score} pts | ${foundWords.length} words found\n\nTry it yourself 👉 https://nimarena.vercel.app\n#NimArena #DailyWordPot #Web3Gaming`;
+              try {
+                if (navigator.share) {
+                  await navigator.share({ title: "NimArena — Daily Word Pot", text });
+                } else {
+                  await navigator.clipboard.writeText(text);
+                }
+              } catch { await navigator.clipboard.writeText(text).catch(() => {}); }
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }}
+            className="w-full py-3 rounded-xl bg-[#1F1F2E] hover:bg-gray-800 text-gray-300 font-bold text-xs uppercase tracking-widest border border-gray-700 transition-colors"
+          >
+            {copied ? "✅ Copied!" : "📋 Share Result"}
           </button>
         </div>
       ) : (

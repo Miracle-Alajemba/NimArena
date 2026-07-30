@@ -82,6 +82,7 @@ export function TriviaPractice({ onExit, onChallengeReal }: TriviaPracticeProps)
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
+  const [copied, setCopied] = useState(false);
   
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   const [currentQIndex, setCurrentQIndex] = useState<number>(0);
@@ -278,9 +279,28 @@ export function TriviaPractice({ onExit, onChallengeReal }: TriviaPracticeProps)
           </button>
           <button
             onClick={onChallengeReal}
-            className="w-full py-4 bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors uppercase tracking-widest shadow-[0_0_20px_rgba(124,58,237,0.3)]"
+            className="w-full py-4 bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors uppercase tracking-widest shadow-[0_0_20px_rgba(124,58,237,0.3)] mb-3"
           >
             <Sword className="w-5 h-5" /> Challenge for Real
+          </button>
+
+          {/* Share Result */}
+          <button
+            onClick={async () => {
+              const text = `⚡ I scored ${score} points in Speed Trivia Practice on NimArena!\n\nThink you can beat me? 👉 https://nimarena.vercel.app\n#NimArena #SpeedTrivia #Web3Gaming`;
+              try {
+                if (navigator.share) {
+                  await navigator.share({ title: "NimArena — Speed Trivia", text });
+                } else {
+                  await navigator.clipboard.writeText(text);
+                }
+              } catch { await navigator.clipboard.writeText(text).catch(() => {}); }
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }}
+            className="w-full py-3 rounded-xl bg-[#1F1F2E] hover:bg-gray-800 text-gray-300 font-bold text-xs uppercase tracking-widest border border-gray-700 transition-colors"
+          >
+            {copied ? "✅ Copied!" : "📋 Share Result"}
           </button>
         </div>
       </div>
