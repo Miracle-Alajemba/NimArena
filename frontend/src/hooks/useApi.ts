@@ -19,10 +19,19 @@ export function useApi() {
 
       try {
         const response = await fetch(url, config);
-        const data = await response.json();
+        const text = await response.text();
+        let data: any = {};
         
+        if (text) {
+          try {
+            data = JSON.parse(text);
+          } catch {
+            data = { error: text || `HTTP Error ${response.status}` };
+          }
+        }
+
         if (!response.ok) {
-          throw new Error(data.error || `HTTP error! Status: ${response.status}`);
+          throw new Error(data.error || data.message || `HTTP error! Status: ${response.status}`);
         }
         
         return data;

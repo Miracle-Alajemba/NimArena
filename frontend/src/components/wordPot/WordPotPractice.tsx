@@ -104,18 +104,21 @@ export function WordPotPractice({ onExit, onChallengeReal }: WordPotPracticeProp
       if (data && data.sourceWord) {
         setSourceWord(data.sourceWord);
         setSessionId(data.sessionId);
-        setCurrentInput("");
-        setFoundWords([]);
-        setScore(0);
-        setTimeLeftMs(60000);
-        setIsGameOver(false);
       } else {
         throw new Error("Failed to load letters");
       }
     } catch (err: any) {
-      console.error(err);
-      setErrorMsg(err.message || "Failed to start practice round");
+      console.warn("WordPotPractice: API start failed, loading practice fallback word", err);
+      const fallbackWords = ["NIMIQUARENA", "CELEBRATION", "BLOCKCHAINS", "PARLIAMENTARY", "TRANSACTION"];
+      const randomFallback = fallbackWords[Math.floor(Math.random() * fallbackWords.length)];
+      setSourceWord(randomFallback);
+      setSessionId(`practice_fallback_${Date.now()}`);
     } finally {
+      setCurrentInput("");
+      setFoundWords([]);
+      setScore(0);
+      setTimeLeftMs(60000);
+      setIsGameOver(false);
       setLoading(false);
     }
   };
