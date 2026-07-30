@@ -16,7 +16,7 @@ interface WordPotLobbyProps {
 
 export function WordPotLobby({ onStartWordPot, onStartPractice, onStartDaily }: WordPotLobbyProps) {
   const { getRounds } = useWordPot();
-  const { enterWordPot, createWordPotRound, txLoading, txError } = useContract();
+  const { enterWordPot, createWordPotRound, finalizeWordPot, txLoading, txError } = useContract();
   const { walletAddress } = useNimiq();
   const { refresh: refreshBalance } = useUSDTBalance();
 
@@ -288,8 +288,7 @@ export function WordPotLobby({ onStartWordPot, onStartPractice, onStartDaily }: 
                     onClick={async () => {
                       if (txLoading) return;
                       try {
-                        const { finalizeWordPot: finalizeRound } = useContract();
-                        await finalizeRound(round.roundId);
+                        await finalizeWordPot(round.roundId);
                         fetchRounds();
                       } catch (err) {
                         console.error(err);

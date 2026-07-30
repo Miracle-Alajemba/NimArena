@@ -29,7 +29,7 @@ interface WordDuelLobbyProps {
 
 export function WordDuelLobby({ onStartWordDuel, onStartPractice, onStartDaily }: WordDuelLobbyProps) {
   const { get } = useApi();
-  const { enterWordDuel, createWordDuelRound, txLoading, txError } = useContract();
+  const { enterWordDuel, createWordDuelRound, finalizeWordDuel, txLoading, txError } = useContract();
   const { walletAddress } = useNimiq();
   const { refresh: refreshBalance } = useUSDTBalance();
 
@@ -307,8 +307,7 @@ export function WordDuelLobby({ onStartWordDuel, onStartPractice, onStartDaily }
                     onClick={async () => {
                       if (txLoading) return;
                       try {
-                        const { finalizeWordDuel: finalizeRound } = useContract();
-                        await finalizeRound(round.roundId);
+                        await finalizeWordDuel(round.roundId);
                         fetchRounds();
                       } catch (err) {
                         console.error(err);

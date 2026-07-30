@@ -8,6 +8,7 @@ import { LeaderboardPage } from "./pages/LeaderboardPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { BottomNav, ActiveTab } from "./components/layout/BottomNav";
 import { USDTRipple } from "./components/layout/USDTRipple";
+import { ErrorBoundary } from "./components/layout/ErrorBoundary";
 import { AlertCircle } from "lucide-react";
 
 type ViewState = "lobby" | "leaderboard" | "history" | "game_word_duel" | "game_trivia" | "game_word_pot";
@@ -83,23 +84,33 @@ function AppContent() {
       )}
 
       {view === "game_word_duel" && (
-        <WordDuelPage onShowRipple={handleShowRipple} onExit={handleNavigateHome} />
+        <ErrorBoundary key="word_duel" fallbackLabel="Word Duel crashed">
+          <WordDuelPage onShowRipple={handleShowRipple} onExit={handleNavigateHome} />
+        </ErrorBoundary>
       )}
 
       {view === "game_trivia" && (
-        <SpeedTriviaPage onShowRipple={handleShowRipple} onExit={handleNavigateHome} />
+        <ErrorBoundary key="trivia" fallbackLabel="Speed Trivia crashed">
+          <SpeedTriviaPage onShowRipple={handleShowRipple} onExit={handleNavigateHome} />
+        </ErrorBoundary>
       )}
 
       {view === "game_word_pot" && (
-        <WordPotPage onShowRipple={handleShowRipple} onExit={handleNavigateHome} />
+        <ErrorBoundary key="word_pot" fallbackLabel="Word Pot crashed">
+          <WordPotPage onShowRipple={handleShowRipple} onExit={handleNavigateHome} />
+        </ErrorBoundary>
       )}
 
       {view === "leaderboard" && (
-        <LeaderboardPage />
+        <ErrorBoundary key="leaderboard" fallbackLabel="Leaderboard crashed">
+          <LeaderboardPage />
+        </ErrorBoundary>
       )}
 
       {view === "history" && (
-        <HistoryPage />
+        <ErrorBoundary key="history" fallbackLabel="History crashed">
+          <HistoryPage />
+        </ErrorBoundary>
       )}
 
       {/* Persistent Bottom Navigation */}
