@@ -81,6 +81,18 @@ export function GameGrid({ onSelectGame }: GameGridProps) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Word Pot */}
+        <GameCard
+          title="Word Pot"
+          description="All players share the same letters. Compare words fairly under identical conditions. Highest score takes the pot!"
+          status="live"
+          emoji="🏺"
+          prize={wordPotPrizePool}
+          players={`${wordPotRoundsCount} rounds`}
+          onClick={() => onSelectGame("word_pot")}
+          accentColor="#F59E0B"
+        />
+
         {/* Word Duel */}
         <GameCard
           title="Word Duel"
@@ -112,18 +124,6 @@ export function GameGrid({ onSelectGame }: GameGridProps) {
           status="coming_soon"
           emoji="🔢"
           accentColor="#4F6EF7"
-        />
-
-        {/* Word Pot */}
-        <GameCard
-          title="Word Pot"
-          description="All players share the same letters. Compare words fairly under identical conditions. Highest score takes the pot!"
-          status="live"
-          emoji="🏺"
-          prize={wordPotPrizePool}
-          players={`${wordPotRoundsCount} rounds`}
-          onClick={() => onSelectGame("word_pot")}
-          accentColor="#F59E0B"
         />
       </div>
     </div>
