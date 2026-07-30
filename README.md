@@ -6,36 +6,68 @@ This is a personal project developed by **Miracle Alajemba**.
 
 ---
 
-## 🌟 Core Features
+## 🌟 Core Features & Live Games
+
+NimArena features 3 live skill-based Web3 games with instant practice modes, daily challenges, and on-chain wagers settled in **USDT** or **NIM**:
+
+### 🏺 Word Pot (Multiplayer & Practice)
+* **Shared Source Word Mechanic**: Every player in a round competes on equal footing using the exact same 8–12 letter source word.
+* **Letter Exhaustion & Visuals**: Renders letter tiles in bold **Syne Bold** typography, dynamically greying out used letters as words are formed.
+* **60-Second Blitz**: Race the clock to find as many valid English sub-words as possible within the 60-second limit.
+* **ECDSA Signed Proofs & On-Chain Payouts**: Backend signs cryptographic score proofs verified on-chain to distribute prize pools.
+* **Practice & Daily Modes**: Free solo practice arena and 24-hour daily challenges.
 
 ### ⚔️ Word Duel (Multiplayer)
-* **Play with Friends (Private Rooms)**: Host direct match wagers by sharing 6-digit numeric room codes, or enter your friend's code to join their custom arena.
-* **Quick Matchmaking**: Stake standard wagers (`0.5`, `1.0`, or `2.0` in either NIM or USDT) and pair instantly with random online opponents.
-* **Commit-Reveal Mechanism**: Players submit hashed words to prevent frontrunning. Once both words are revealed, the longer valid English word claims the pot.
+* **Skill-Based Word Building**: Test your vocabulary in real-time head-to-head matches against opponents.
+* **Wager Options**: Stake standard wagers (`0.5`, `1.0`, or `2.0` in USDT or NIM) to join live rounds.
+* **Practice Arena**: Free solo practice mode to sharpen your word skills without entry fees.
 
 ### 🧠 Speed Trivia (Tournament Mode)
-* **Competitive Rounds**: Enter live rounds by staking the required entry fee.
-* **Rapid Gameplay**: Answer 10 consecutive timed trivia questions. Speed and accuracy determine your score.
-* **ECDSA Signed Proofs**: Score validations are digitally signed by the backend key and submitted on-chain to verify outcomes and disburse the pool.
-
-### 🧩 Daily Challenge (Single-Player)
-* **Daily Anagram Solver**: Solve the daily puzzle by building valid anagram sub-words from a randomly picked 8-10 letter source word.
-* **Score Milestones**: Achieve a score of `50 points` within the session limit to claim a daily reward.
-* **Direct Payouts**: The daily reward of `1.00 USDT` or wrapping wagers is sent directly to your wallet on-chain.
-* **24h Cooldown Cooldown**: Monitored via a rolling database timestamp and rendered as an interactive live countdown clock.
+* **Rapid Gameplay**: Answer 10 timed trivia questions testing general knowledge, science, and Web3 trivia.
+* **Speed & Accuracy Scoring**: Higher speed bonuses awarded for faster correct answers.
+* **Practice Mode**: Instant practice mode with built-in fallback questions.
 
 ---
 
 ## 🏗️ Project Architecture
 
-This project is configured as a monorepo using npm workspaces:
+This project is configured as a clean monorepo:
 
 ```
 NimArena/
-├── contracts/       # Solidity smart contracts & Hardhat test suite
-├── backend/         # Express API, Socket.io matchmaker & event sync services
-└── frontend/        # React, Vite, Tailwind CSS v4 & Nimiq Pay SDK
+├── contracts/       # Solidity smart contracts & Hardhat test suite (22/22 passing)
+├── backend/         # Express API, Prisma ORM, ECDSA Signer & Event Syncer
+└── frontend/        # React 18, Vite, Tailwind CSS & Nimiq Pay SDK
 ```
+
+---
+
+## 🚀 Quick Start & Submission Setup
+
+### 1. Smart Contracts & Tests
+```bash
+cd contracts
+npm install
+npx hardhat test
+```
+
+### 2. Backend Service
+```bash
+cd backend
+npm install
+npm run build
+npm run dev
+```
+
+### 3. Frontend Web App
+```bash
+cd frontend
+npm install
+npm run build
+npm run dev
+```
+
+Open **`http://localhost:5173/`** to launch the NimArena Game Hub.
 
 ---
 
