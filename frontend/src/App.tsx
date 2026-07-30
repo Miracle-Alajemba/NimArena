@@ -48,12 +48,11 @@ function AppContent() {
   // Display initialization loader
   if (!isReady) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#0A0A0F] text-gray-400 gap-4">
-        <div className="w-12 h-12 rounded-full border-2 border-t-transparent border-[#7C3AED] animate-spin" />
-        <span className="text-sm font-extrabold uppercase tracking-wider font-display text-white animate-pulse">
-          Starting NimArena SDK...
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#0A0A0F] text-gray-400 gap-3">
+        <div className="w-10 h-10 rounded-full border-2 border-t-transparent border-[#7C3AED] animate-spin" />
+        <span className="text-xs font-extrabold uppercase tracking-widest font-display text-white animate-pulse">
+          Initializing NimArena...
         </span>
-        <span className="text-[10px] text-gray-600 font-mono">Loading injected providers</span>
       </div>
     );
   }

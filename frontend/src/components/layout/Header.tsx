@@ -10,7 +10,7 @@ interface HeaderProps {
 }
 
 export function Header({ onBack }: HeaderProps) {
-  const { walletAddress } = useNimiq();
+  const { walletAddress, connectWallet } = useNimiq();
   const { balance: usdtBalance } = useUSDTBalance();
   const { balance: nimBalance } = useNIMBalance();
 
@@ -68,7 +68,10 @@ export function Header({ onBack }: HeaderProps) {
           </div>
 
           {/* Wallet address */}
-          <div className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-[#7C3AED]/10 border border-[#7C3AED]/25 text-[#A78BFA] shrink-0 shadow-sm">
+          <div
+            onClick={connectWallet}
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-[#7C3AED]/10 border border-[#7C3AED]/25 text-[#A78BFA] shrink-0 shadow-sm cursor-pointer hover:bg-[#7C3AED]/20 transition-all"
+          >
             <Wallet className="w-3 h-3" />
             <span className="hidden xs:inline text-[10px] font-bold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
               {truncateAddress(walletAddress)}

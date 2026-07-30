@@ -5,6 +5,7 @@ interface NimiqContextType {
   isReady: boolean;
   playerId: string | null;
   walletAddress: `0x${string}` | null;
+  connectWallet: () => Promise<void>;
   error: string | null;
 }
 
@@ -12,6 +13,7 @@ const NimiqContext = createContext<NimiqContextType>({
   isReady: false,
   playerId: null,
   walletAddress: null,
+  connectWallet: async () => {},
   error: null,
 });
 
@@ -25,22 +27,22 @@ export function NimiqProvider({ children }: { children: ReactNode }) {
     async function initializeSdk() {
       try {
         console.log("NimiqSDK: Initializing Nimiq Mini App SDK...");
-        // 1. Wait for provider to be ready (catch error/timeout to allow normal web previews)
+        // 1. Wait for provider to be ready (fast 300ms check for web previews)
         try {
           await Promise.race([
             init(),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("SDK init timeout")), 1500))
+            new Promise((_, reject) => setTimeout(() => reject(new Error("SDK init timeout")), 300))
           ]);
           console.log("NimiqSDK: SDK initialized successfully.");
         } catch (sdkErr) {
           console.warn("NimiqSDK: Running outside Nimiq Pay WebView. Bypassing SDK init.", sdkErr);
         }
 
-        // 2. Request device identifier (persistent across sessions)
+        // 2. Request device identifier (fast 300ms fallback)
         try {
           const id = await Promise.race([
             requestDeviceIdentifier({ reason: "Player identity" }),
-            new Promise<string>((_, reject) => setTimeout(() => reject(new Error("Device ID timeout")), 1500))
+            new Promise<string>((_, reject) => setTimeout(() => reject(new Error("Device ID timeout")), 300))
           ]);
           console.log("NimiqSDK: Retrieved player ID:", id);
           setPlayerId(id);
@@ -100,8 +102,21 @@ export function NimiqProvider({ children }: { children: ReactNode }) {
     initializeSdk();
   }, []);
 
+  const connectWallet = async () => {
+    if (window.ethereum) {
+      try {
+        const accounts = (await window.ethereum.request({ method: "eth_requestAccounts" })) as string[];
+        if (accounts && accounts.length > 0) {
+          setWalletAddress(accounts[0] as `0x${string}`);
+        }
+      } catch (err) {
+        console.error("useNimiq: Connect wallet failed:", err);
+      }
+    }
+  };
+
   return (
-    <NimiqContext.Provider value={{ isReady, playerId, walletAddress, error }}>
+    <NimiqContext.Provider value={{ isReady, playerId, walletAddress, connectWallet, error }}>
       {children}
     </NimiqContext.Provider>
   );
