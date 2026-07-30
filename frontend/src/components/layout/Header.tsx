@@ -21,12 +21,8 @@ export function Header({ onBack }: HeaderProps) {
         className={`flex items-center gap-2.5 select-none ${onBack ? "cursor-pointer" : ""}`}
         onClick={onBack}
       >
-        <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-[#13131A] border border-[#7C3AED]/60 shadow-[0_0_12px_rgba(124,58,237,0.4)] overflow-hidden">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#1F1F2E_1px,transparent_1px),linear-gradient(to_bottom,#1F1F2E_1px,transparent_1px)] bg-[size:5px_5px] opacity-40" />
-          <div className="absolute inset-0 border border-t-[#A78BFA] border-r-transparent border-b-[#7C3AED] border-l-transparent rounded-full animate-spin" style={{ animationDuration: "3s" }} />
-          <Gamepad2 className="w-4.5 h-4.5 text-white z-10 drop-shadow-[0_0_4px_rgba(124,58,237,0.8)]" />
-          <span className="absolute top-1 left-1 w-1 h-1 rounded-full bg-[#10B981]" />
-          <span className="absolute bottom-1 right-1 w-1 h-1 rounded-full bg-[#F59E0B] animate-pulse" />
+        <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-[#13131A] border border-[#F59E0B]/50 shadow-[0_0_12px_rgba(245,158,11,0.25)] overflow-hidden">
+          <img src="/logo.png" alt="NimArena Logo" className="w-full h-full object-cover" />
         </div>
 
         <div className="flex flex-col">
