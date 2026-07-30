@@ -150,7 +150,7 @@ router.post("/start", async (req: Request, res: Response) => {
       score: 0,
       targetScore: 50,
       rewardAmount: "1.00", // 1.00 USDT
-      expiresAt: Date.now() + 15 * 60 * 1000, // 15 mins session TTL
+      expiresAt: Date.now() + 60 * 1000, // 1 min session TTL
     };
 
     dailySessions.set(sessionId, session);

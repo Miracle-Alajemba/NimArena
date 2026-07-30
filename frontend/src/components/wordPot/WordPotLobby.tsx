@@ -26,7 +26,7 @@ export function WordPotLobby({ onStartWordPot, onStartPractice, onStartDaily }: 
   // Create Round Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [feeOption, setFeeOption] = useState<string>("0.5");
-  const [duration, setDuration] = useState<number>(300); // 5 mins join window default
+  const [duration, setDuration] = useState<number>(60); // 1 min join window default
 
   const [selectedCurrency, setSelectedCurrency] = useState<"USDT" | "NIM">("USDT");
   const tokenAddress = selectedCurrency === "USDT" ? USDT_ADDRESS : NIM_ADDRESS;

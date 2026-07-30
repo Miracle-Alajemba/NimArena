@@ -39,7 +39,7 @@ export function WordDuelLobby({ onStartWordDuel, onStartPractice, onStartDaily }
   // Create Round Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [feeOption, setFeeOption] = useState<string>("0.5");
-  const [duration, setDuration] = useState<number>(300); // 5 mins default
+  const [duration, setDuration] = useState<number>(60); // 1 min default
 
   const [selectedCurrency, setSelectedCurrency] = useState<"USDT" | "NIM">("USDT");
   const tokenAddress = selectedCurrency === "USDT" ? USDT_ADDRESS : NIM_ADDRESS;
@@ -385,10 +385,10 @@ export function WordDuelLobby({ onStartWordDuel, onStartPractice, onStartDaily }
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {[
+                  { label: "1 Min", value: 60 },
                   { label: "5 Min", value: 300 },
                   { label: "15 Min", value: 900 },
                   { label: "1 Hour", value: 3600 },
-                  { label: "1 Day", value: 86400 },
                 ].map((opt) => (
                   <button
                     key={opt.value}

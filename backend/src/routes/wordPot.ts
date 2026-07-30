@@ -528,7 +528,7 @@ router.get("/daily/letters", async (req: Request, res: Response) => {
       claimedWords: new Set<string>(),
       score: 0,
       targetScore: 50,
-      expiresAt: Date.now() + 15 * 60 * 1000,
+      expiresAt: Date.now() + 60 * 1000,
     });
 
     return res.json({
