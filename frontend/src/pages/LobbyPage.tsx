@@ -3,7 +3,7 @@ import Header from "../components/layout/Header";
 import GameGrid from "../components/lobby/GameGrid";
 
 interface LobbyPageProps {
-  onSelectGame: (game: "word_duel" | "speed_trivia") => void;
+  onSelectGame: (game: "word_duel" | "speed_trivia" | "word_pot") => void;
 }
 
 export function LobbyPage({ onSelectGame }: LobbyPageProps) {

@@ -41,39 +41,42 @@ export function WordPotLobby({ onStartWordPot, onStartPractice, onStartDaily }: 
   const [enteredRounds, setEnteredRounds] = useState<Record<number, boolean>>({});
 
   const fetchRounds = async () => {
-    setLoading(true);
     try {
       const data = await getRounds();
       setRounds(data || []);
+      setLoading(false);
 
-      // Check entered status for each round on-chain
-      if (walletAddress && CONTRACT_ADDRESS !== "0x0000000000000000000000000000000000000000") {
+      // Check entered status for each round in background
+      if (walletAddress && data && data.length > 0 && CONTRACT_ADDRESS !== "0x0000000000000000000000000000000000000000") {
         const enteredStates: Record<number, boolean> = {};
         for (const r of data) {
           try {
-            const entered = await publicClient.readContract({
-              address: CONTRACT_ADDRESS,
-              abi: [
-                {
-                  name: "wordPotEntered",
-                  type: "function",
-                  stateMutability: "view",
-                  inputs: [
-                    { name: "", type: "uint256" },
-                    { name: "", type: "address" },
-                  ],
-                  outputs: [{ name: "", type: "bool" }],
-                },
-              ],
-              functionName: "wordPotEntered",
-              args: [BigInt(r.roundId), walletAddress],
-            } as any);
+            const entered = await Promise.race([
+              publicClient.readContract({
+                address: CONTRACT_ADDRESS,
+                abi: [
+                  {
+                    name: "wordPotEntered",
+                    type: "function",
+                    stateMutability: "view",
+                    inputs: [
+                      { name: "", type: "uint256" },
+                      { name: "", type: "address" },
+                    ],
+                    outputs: [{ name: "", type: "bool" }],
+                  },
+                ],
+                functionName: "wordPotEntered",
+                args: [BigInt(r.roundId), walletAddress],
+              } as any),
+              new Promise((_, reject) => setTimeout(() => reject(new Error("RPC Timeout")), 2000))
+            ]);
             enteredStates[r.roundId] = entered as boolean;
           } catch (e) {
-            console.error("WordPotLobby: Failed to check entered status:", e);
+            console.warn("WordPotLobby: On-chain entered check skipped/timed out:", e);
           }
         }
-        setEnteredRounds(enteredStates);
+        setEnteredRounds((prev) => ({ ...prev, ...enteredStates }));
       }
     } catch (err) {
       console.error("WordPotLobby: Failed to fetch rounds:", err);
