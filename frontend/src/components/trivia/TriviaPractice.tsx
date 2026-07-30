@@ -19,6 +19,64 @@ interface QuestionData {
   difficulty: string;
 }
 
+const FALLBACK_PRACTICE_QUESTIONS: QuestionData[] = [
+  {
+    id: 1,
+    question: "What is the native cryptocurrency of the Nimiq network?",
+    optionA: "NIM",
+    optionB: "USDT",
+    optionC: "BTC",
+    optionD: "ETH",
+    correctIdx: 0,
+    category: "Web3",
+    difficulty: "easy"
+  },
+  {
+    id: 2,
+    question: "Which layer-2 EVM blockchain does NimArena use for smart contract wagers?",
+    optionA: "Base",
+    optionB: "Polygon",
+    optionC: "Arbitrum",
+    optionD: "Optimism",
+    correctIdx: 0,
+    category: "Web3",
+    difficulty: "medium"
+  },
+  {
+    id: 3,
+    question: "What chemical element has the symbol 'Au'?",
+    optionA: "Silver",
+    optionB: "Gold",
+    optionC: "Copper",
+    optionD: "Iron",
+    correctIdx: 1,
+    category: "Science",
+    difficulty: "easy"
+  },
+  {
+    id: 4,
+    question: "What is the capital city of France?",
+    optionA: "Berlin",
+    optionB: "Madrid",
+    optionC: "Paris",
+    optionD: "Rome",
+    correctIdx: 2,
+    category: "General",
+    difficulty: "easy"
+  },
+  {
+    id: 5,
+    question: "How many seconds do players get per round in Word Pot?",
+    optionA: "30 Seconds",
+    optionB: "60 Seconds",
+    optionC: "90 Seconds",
+    optionD: "120 Seconds",
+    correctIdx: 1,
+    category: "Gaming",
+    difficulty: "easy"
+  }
+];
+
 export function TriviaPractice({ onExit, onChallengeReal }: TriviaPracticeProps) {
   const { get } = useApi();
 
@@ -89,15 +147,24 @@ export function TriviaPractice({ onExit, onChallengeReal }: TriviaPracticeProps)
     setLoading(true);
     try {
       const qData = await get("/api/trivia/practice/questions");
-      setQuestions(qData);
+      if (Array.isArray(qData) && qData.length > 0) {
+        setQuestions(qData);
+      } else {
+        setQuestions(FALLBACK_PRACTICE_QUESTIONS);
+      }
       setScore(0);
       setCurrentQIndex(0);
       setIsGameOver(false);
       setIsPlaying(true);
       startQuestionTimer();
     } catch (err) {
-      console.error("TriviaPractice: Failed to fetch questions:", err);
-      alert("Failed to load practice questions.");
+      console.warn("TriviaPractice: Failed to fetch questions, loading fallback array:", err);
+      setQuestions(FALLBACK_PRACTICE_QUESTIONS);
+      setScore(0);
+      setCurrentQIndex(0);
+      setIsGameOver(false);
+      setIsPlaying(true);
+      startQuestionTimer();
     } finally {
       setLoading(false);
     }
