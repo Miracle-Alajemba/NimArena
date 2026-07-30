@@ -8,5 +8,9 @@
     "contracts",
     "backend",
     "frontend"
-  ]
+  ],
+  "scripts": {
+    "build": "npm --workspace=backend run build",
+    "start": "npm --workspace=backend run start"
+  }
 }
