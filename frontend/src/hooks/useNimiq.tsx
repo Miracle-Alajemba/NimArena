@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext, type ReactNode } from "react";
 import { init, requestDeviceIdentifier } from "@nimiq/mini-app-sdk";
 
@@ -13,7 +14,7 @@ const NimiqContext = createContext<NimiqContextType>({
   isReady: false,
   playerId: null,
   walletAddress: null,
-  connectWallet: async () => {},
+  connectWallet: async () => { },
   error: null,
 });
 
@@ -54,7 +55,7 @@ export function NimiqProvider({ children }: { children: ReactNode }) {
         // 3. Fetch connected EVM address immediately from injected window.ethereum
         if (window.ethereum) {
           console.log("NimiqSDK: Injected window.ethereum found.");
-          
+
           // Request accounts. No connect dialog is needed, but we request the connected address.
           const accounts = await window.ethereum.request({
             method: "eth_accounts",
@@ -87,7 +88,7 @@ export function NimiqProvider({ children }: { children: ReactNode }) {
         } else {
           console.warn("NimiqSDK: window.ethereum not found. In mock/browser environment.");
           // Fallback placeholder address for development/browser preview outside Nimiq Pay
-          const mockAddress = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8" as `0x${string}`; 
+          const mockAddress = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8" as `0x${string}`;
           setWalletAddress(mockAddress);
         }
 

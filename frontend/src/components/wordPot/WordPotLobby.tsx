@@ -200,11 +200,33 @@ export function WordPotLobby({ onStartWordPot, onStartPractice, onStartDaily }: 
             <span className="text-xs font-bold uppercase tracking-wider">Loading active pots...</span>
           </div>
         ) : rounds.filter((r: any) => !r.tokenAddress || r.tokenAddress.toLowerCase() === tokenAddress.toLowerCase()).length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-500 gap-3 border border-[#1F1F2E] rounded-2xl bg-[#13131A]">
-            <span className="text-3xl opacity-50">🏺</span>
-            <span className="text-xs font-bold uppercase tracking-wider text-center px-4">
-              No active Word Pot rounds.<br />Create one to start playing!
-            </span>
+          <div className="flex flex-col items-center justify-center py-12 px-6 text-gray-400 gap-4 border border-[#F59E0B]/30 rounded-2xl bg-[#13131A] text-center shadow-[0_0_20px_rgba(245,158,11,0.05)]">
+            <div className="w-14 h-14 rounded-full bg-[#F59E0B]/15 border border-[#F59E0B]/40 flex items-center justify-center text-2xl">
+              🏺
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-white uppercase tracking-wider font-display mb-1">
+                Word Pot Arena
+              </h3>
+              <p className="text-xs text-gray-400 leading-relaxed max-w-xs">
+                No active on-chain pots for {selectedCurrency} right now. Create a new wager round or jump straight into Practice Mode!
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2.5 w-full mt-1">
+              <button
+                onClick={onStartPractice}
+                className="flex-1 py-3 px-4 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-white text-xs font-extrabold uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2"
+              >
+                <Target className="w-4 h-4" /> Start Practice Mode
+              </button>
+              <button
+                onClick={onStartDaily}
+                className="flex-1 py-3 px-4 rounded-xl bg-[#1A1A24] hover:bg-[#252536] text-[#F59E0B] border border-[#F59E0B]/40 text-xs font-extrabold uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+              >
+                <Flame className="w-4 h-4" /> Daily Challenge
+              </button>
+            </div>
           </div>
         ) : (
           rounds.filter((r: any) => !r.tokenAddress || r.tokenAddress.toLowerCase() === tokenAddress.toLowerCase()).map((round: any) => {
