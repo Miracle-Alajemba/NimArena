@@ -57,12 +57,13 @@ export function WordDuelLobby({ onStartWordDuel, onStartPractice, onStartDaily }
     setLoading(true);
     try {
       const data = await get("/api/word-duel/rounds");
-      setRounds(data || []);
+      const roundsArr = Array.isArray(data) ? data : [];
+      setRounds(roundsArr);
 
       // Check entered status for each round on-chain
       if (walletAddress && CONTRACT_ADDRESS !== "0x0000000000000000000000000000000000000000") {
         const enteredStates: Record<number, boolean> = {};
-        for (const r of data) {
+        for (const r of roundsArr) {
           try {
             const entered = await publicClient.readContract({
               address: CONTRACT_ADDRESS,

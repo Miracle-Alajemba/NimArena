@@ -43,7 +43,8 @@ export function WordPotLobby({ onStartWordPot, onStartPractice, onStartDaily }: 
   const fetchRounds = async () => {
     try {
       const data = await getRounds();
-      setRounds(data || []);
+      const roundsArr = Array.isArray(data) ? data : [];
+      setRounds(roundsArr);
       setLoading(false);
 
       // Check entered status for each round in background

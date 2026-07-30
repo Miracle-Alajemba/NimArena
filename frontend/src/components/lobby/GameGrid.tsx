@@ -20,7 +20,8 @@ export function GameGrid({ onSelectGame }: GameGridProps) {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const duels = await get("/api/duels/open");
+        const duelsData = await get("/api/duels/open");
+        const duels = Array.isArray(duelsData) ? duelsData : [];
         setOpenDuelsCount(duels.length);
 
         let totalDuelUSDT = 0;
@@ -32,7 +33,8 @@ export function GameGrid({ onSelectGame }: GameGridProps) {
         }
         setDuelPrizePool(totalDuelUSDT > 0 ? `${totalDuelUSDT.toFixed(2)} USDT` : "0.00 USDT");
 
-        const rounds = await get("/api/trivia/rounds");
+        const roundsData = await get("/api/trivia/rounds");
+        const rounds = Array.isArray(roundsData) ? roundsData : [];
         setActiveRoundsCount(rounds.length);
 
         let totalTriviaUSDT = 0;
@@ -44,7 +46,8 @@ export function GameGrid({ onSelectGame }: GameGridProps) {
         }
         setTriviaPrizePool(totalTriviaUSDT > 0 ? `${totalTriviaUSDT.toFixed(2)} USDT` : "0.00 USDT");
 
-        const potRounds = await get("/api/word-pot/rounds");
+        const potRoundsData = await get("/api/word-pot/rounds");
+        const potRounds = Array.isArray(potRoundsData) ? potRoundsData : [];
         setWordPotRoundsCount(potRounds.length);
 
         let totalPotUSDT = 0;
