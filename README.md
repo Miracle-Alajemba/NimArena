@@ -1,5 +1,9 @@
 # 🏟️ NimArena
 
+[![Live Web App](https://img.shields.io/badge/Live_App-nimarena.vercel.app-7C3AED?style=for-the-badge&logo=vercel)](https://nimarena.vercel.app/)
+
+🌐 **Live Web App**: [https://nimarena.vercel.app/](https://nimarena.vercel.app/)
+
 NimArena is a competitive, skill-based mini-game hub built for Nimiq Pay. Operating as a decentralized web application within the Nimiq Pay ecosystem, all matches, scores, and rewards are settled transparently on-chain via Solidity smart contracts on Base.
 
 This is a personal project developed by **Miracle Alajemba**.
