@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Header from "../components/layout/Header";
 import { WordPotLobby } from "../components/wordPot/WordPotLobby";
 import { WordPotGame } from "../components/wordPot/WordPotGame";
 import { WordPotResults } from "../components/wordPot/WordPotResults";
@@ -44,50 +45,57 @@ export function WordPotPage({ onShowRipple, onExit }: WordPotPageProps) {
   };
 
   return (
-    <div className="w-full">
-      {view === "lobby" && (
-        <WordPotLobby
-          onStartWordPot={handleStartWordPot}
-          onStartPractice={() => setView("practice")}
-          onStartDaily={() => setView("daily")}
-        />
-      )}
+    <div className="flex flex-col min-h-screen bg-[#0A0A0F] pb-24 text-white">
+      {/* Header */}
+      <Header onBack={onExit} />
 
-      {view === "game" && activeRoundId !== null && (
-        <WordPotGame
-          roundId={activeRoundId}
-          entryFee={activeEntryFee}
-          poolBalance={activePoolBalance}
-          playerCount={activePlayerCount}
-          currency={activeCurrency}
-          onComplete={handleGameComplete}
-          onExit={handleExit}
-        />
-      )}
+      <div className="w-full">
+        {view === "lobby" && (
+          <WordPotLobby
+            onStartWordPot={handleStartWordPot}
+            onStartPractice={() => setView("practice")}
+            onStartDaily={() => setView("daily")}
+          />
+        )}
 
-      {view === "results" && activeRoundId !== null && sessionId !== null && (
-        <WordPotResults
-          roundId={activeRoundId}
-          sessionId={sessionId}
-          score={finalScore}
-          onExit={handleExit}
-          onShowRipple={onShowRipple}
-        />
-      )}
+        {view === "game" && activeRoundId !== null && (
+          <WordPotGame
+            roundId={activeRoundId}
+            entryFee={activeEntryFee}
+            poolBalance={activePoolBalance}
+            playerCount={activePlayerCount}
+            currency={activeCurrency}
+            onComplete={handleGameComplete}
+            onExit={handleExit}
+          />
+        )}
 
-      {view === "practice" && (
-        <WordPotPractice
-          onExit={handleExit}
-          onChallengeReal={() => setView("lobby")}
-        />
-      )}
+        {view === "results" && activeRoundId !== null && sessionId !== null && (
+          <WordPotResults
+            roundId={activeRoundId}
+            sessionId={sessionId}
+            score={finalScore}
+            onExit={handleExit}
+            onShowRipple={onShowRipple}
+          />
+        )}
 
-      {view === "daily" && (
-        <DailyWordPotGame
-          onExit={handleExit}
-          onShowRipple={onShowRipple}
-        />
-      )}
+        {view === "practice" && (
+          <div className="flex-1 px-5 w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto pt-4">
+            <WordPotPractice
+              onExit={() => setView("lobby")}
+              onChallengeReal={() => setView("lobby")}
+            />
+          </div>
+        )}
+
+        {view === "daily" && (
+          <DailyWordPotGame
+            onExit={() => setView("lobby")}
+            onShowRipple={onShowRipple}
+          />
+        )}
+      </div>
     </div>
   );
 }

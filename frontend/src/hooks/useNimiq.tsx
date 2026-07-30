@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, type ReactNode } from "react";
 import { init, requestDeviceIdentifier } from "@nimiq/mini-app-sdk";
 
