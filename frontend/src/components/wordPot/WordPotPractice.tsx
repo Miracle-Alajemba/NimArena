@@ -3,7 +3,7 @@ import { useNimiq } from "../../hooks/useNimiq";
 import { useApi } from "../../hooks/useApi";
 import { Loader2, ArrowLeft, Trophy, RotateCcw, Volume2, VolumeX, ShieldCheck } from "lucide-react";
 import { PremiumLoader } from "../layout/PremiumLoader";
-import { wordEmoji } from "../../lib/gameLogic";
+import { wordEmoji, scoreForLength } from "../../lib/gameLogic";
 
 interface WordPotPracticeProps {
   onExit: () => void;
@@ -184,28 +184,67 @@ export function WordPotPractice({ onExit, onChallengeReal }: WordPotPracticeProp
   };
 
   const handleSubmitWord = async () => {
-    if (currentInput.length < 3) {
+    const cleanInput = currentInput.trim().toUpperCase();
+
+    if (cleanInput.length < 3) {
       showError("Word too short!");
       return;
     }
 
-    try {
-      // Practice mode uses Word Pot submit logic
-      const res = await post("/api/word-pot/session/submit-word", {
-        sessionId,
-        word: currentInput.toLowerCase()
-      });
-
-      if (res && res.valid) {
-        const pts = res.scoreAdded ?? 1;
-        setFoundWords((prev) => [{ word: res.word.toUpperCase(), score: pts }, ...prev]);
-        setScore((prev) => prev + pts);
-        setCurrentInput("");
-        playSound("submit");
-      }
-    } catch (err: any) {
-      showError(err.message || "Invalid word");
+    if (foundWords.some((item) => item.word === cleanInput)) {
+      showError("Already found!");
+      return;
     }
+
+    // Validate letter composition against sourceWord
+    const sourceCounts: Record<string, number> = {};
+    for (const char of sourceWord.toUpperCase()) {
+      sourceCounts[char] = (sourceCounts[char] || 0) + 1;
+    }
+    let isValidLetters = true;
+    for (const char of cleanInput) {
+      if (!sourceCounts[char]) {
+        isValidLetters = false;
+        break;
+      }
+      sourceCounts[char]--;
+    }
+
+    if (!isValidLetters) {
+      showError("Invalid letters!");
+      return;
+    }
+
+    // Try backend validation if session is active and not fallback
+    if (sessionId && !sessionId.startsWith("practice_fallback_")) {
+      try {
+        const res = await post("/api/word-pot/session/submit-word", {
+          sessionId,
+          word: cleanInput.toLowerCase()
+        });
+
+        if (res && res.valid) {
+          const pts = res.scoreAdded ?? scoreForLength(cleanInput.length);
+          setFoundWords((prev) => [{ word: cleanInput, score: pts }, ...prev]);
+          setScore((prev) => prev + pts);
+          setCurrentInput("");
+          playSound("submit");
+          return;
+        } else if (res && res.error) {
+          showError(res.error);
+          return;
+        }
+      } catch (err) {
+        console.warn("WordPotPractice: API submit failed, using practice local validation fallback", err);
+      }
+    }
+
+    // Smooth practice local validation fallback
+    const pts = scoreForLength(cleanInput.length);
+    setFoundWords((prev) => [{ word: cleanInput, score: pts }, ...prev]);
+    setScore((prev) => prev + pts);
+    setCurrentInput("");
+    playSound("submit");
   };
 
   const showError = (msg: string) => {
