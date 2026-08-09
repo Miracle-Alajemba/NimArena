@@ -103,15 +103,28 @@ export function NimiqProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const connectWallet = async () => {
-    if (window.ethereum) {
+    if (typeof window !== "undefined" && window.ethereum) {
       try {
+        setError(null);
+        console.log("NimiqSDK: Requesting eth_requestAccounts from window.ethereum...");
         const accounts = (await window.ethereum.request({ method: "eth_requestAccounts" })) as string[];
         if (accounts && accounts.length > 0) {
-          setWalletAddress(accounts[0] as `0x${string}`);
+          const addr = accounts[0] as `0x${string}`;
+          setWalletAddress(addr);
+          console.log("NimiqSDK: Connected address:", addr);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("useNimiq: Connect wallet failed:", err);
+        setError(err.message || "Failed to connect wallet");
+        alert(`Wallet Connection Error: ${err.message || "User rejected connection request"}`);
       }
+    } else {
+      console.warn("NimiqSDK: window.ethereum not found.");
+      alert(
+        "⚡ Nimiq Pay / Web3 Wallet Required\n\n" +
+        "• Playing in Nimiq Pay: Open this app inside the Nimiq Pay Mini App tab.\n" +
+        "• Playing in Browser: Please install MetaMask or a Web3 wallet extension to connect on Base."
+      );
     }
   };
 
