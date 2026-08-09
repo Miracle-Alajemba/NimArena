@@ -17,7 +17,7 @@ interface WordPotLobbyProps {
 export function WordPotLobby({ onStartWordPot, onStartPractice, onStartDaily }: WordPotLobbyProps) {
   const { getRounds } = useWordPot();
   const { enterWordPot, createWordPotRound, finalizeWordPot, txLoading, txError } = useContract();
-  const { walletAddress } = useNimiq();
+  const { walletAddress, connectWallet } = useNimiq();
   const { refresh: refreshBalance } = useUSDTBalance();
 
   const [rounds, setRounds] = useState<any[]>([]);
@@ -106,6 +106,10 @@ export function WordPotLobby({ onStartWordPot, onStartPractice, onStartDaily }: 
   };
 
   const handleCreateRound = async () => {
+    if (!walletAddress) {
+      connectWallet();
+      return;
+    }
     try {
       const hash = await createWordPotRound(feeOption, duration, tokenAddress);
       if (hash) {
@@ -394,6 +398,18 @@ export function WordPotLobby({ onStartWordPot, onStartPractice, onStartDaily }: 
               </div>
             </div>
 
+            {/* Error / Notice Display */}
+            {txError && (
+              <div className="p-3 rounded-xl bg-[#EF4444]/15 border border-[#EF4444]/30 text-xs text-[#EF4444] font-bold text-center">
+                ❌ {txError}
+              </div>
+            )}
+            {!walletAddress && (
+              <div className="p-3 rounded-xl bg-[#F59E0B]/15 border border-[#F59E0B]/30 text-xs text-[#F59E0B] font-bold text-center">
+                ⚠️ Connect wallet to create a pot on-chain
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex gap-3 border-t border-[#1F1F2E] pt-4 mt-2">
               <button
@@ -411,6 +427,8 @@ export function WordPotLobby({ onStartWordPot, onStartPractice, onStartDaily }: 
               >
                 {txLoading ? (
                   <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin" />
+                ) : !walletAddress ? (
+                  "Connect Wallet"
                 ) : (
                   "Create Pot"
                 )}

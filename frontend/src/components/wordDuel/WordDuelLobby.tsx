@@ -30,7 +30,7 @@ interface WordDuelLobbyProps {
 export function WordDuelLobby({ onStartWordDuel, onStartPractice, onStartDaily }: WordDuelLobbyProps) {
   const { get } = useApi();
   const { enterWordDuel, createWordDuelRound, finalizeWordDuel, txLoading, txError } = useContract();
-  const { walletAddress } = useNimiq();
+  const { walletAddress, connectWallet } = useNimiq();
   const { refresh: refreshBalance } = useUSDTBalance();
 
   const [rounds, setRounds] = useState<WordDuelRound[]>([]);
@@ -131,6 +131,10 @@ export function WordDuelLobby({ onStartWordDuel, onStartPractice, onStartDaily }
   };
 
   const handleCreateRound = async () => {
+    if (!walletAddress) {
+      connectWallet();
+      return;
+    }
     try {
       const hash = await createWordDuelRound(feeOption, duration, tokenAddress);
       if (hash) {
@@ -405,6 +409,18 @@ export function WordDuelLobby({ onStartWordDuel, onStartPractice, onStartDaily }
               </div>
             </div>
 
+            {/* Error / Notice Display */}
+            {txError && (
+              <div className="p-3 rounded-xl bg-[#EF4444]/15 border border-[#EF4444]/30 text-xs text-[#EF4444] font-bold text-center">
+                ❌ {txError}
+              </div>
+            )}
+            {!walletAddress && (
+              <div className="p-3 rounded-xl bg-[#7C3AED]/15 border border-[#7C3AED]/30 text-xs text-[#A78BFA] font-bold text-center">
+                ⚠️ Connect wallet to create a round on-chain
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex gap-3 border-t border-[#1F1F2E] pt-4 mt-2">
               <button
@@ -422,6 +438,8 @@ export function WordDuelLobby({ onStartWordDuel, onStartPractice, onStartDaily }
               >
                 {txLoading ? (
                   <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin" />
+                ) : !walletAddress ? (
+                  "Connect Wallet"
                 ) : (
                   "Create Round"
                 )}
