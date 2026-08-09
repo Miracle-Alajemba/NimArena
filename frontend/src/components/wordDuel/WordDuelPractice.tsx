@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNimiq } from "../../hooks/useNimiq";
 import { useWordDuel } from "../../hooks/useWordDuel";
-import { Loader2, Sword, Trophy } from "lucide-react";
+import { Loader2, Sword, Trophy, ArrowLeft, Timer, Zap, Target, Play, HelpCircle } from "lucide-react";
 import { PremiumLoader } from "../layout/PremiumLoader";
 import { wordEmoji } from "../../lib/gameLogic";
 
@@ -166,34 +166,88 @@ export function WordDuelPractice({ onExit, onChallengeReal }: WordDuelPracticePr
 
   // ---- LOBBY ----
   if (phase === "lobby") return (
-    <div className="w-full bg-[#13131A] rounded-2xl p-8 border-2 border-[#10B981]/25 shadow-[0_0_35px_rgba(16,185,129,0.08)] text-center page-fade-in">
-      <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-[#10B981]/15 border border-[#10B981]/40 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.35)]">
-        <span className="text-3xl">⚡</span>
+    <div className="w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto pt-6 px-4 page-fade-in pb-24">
+      {/* Top Header */}
+      <div className="flex justify-between items-center mb-6">
+        <button
+          onClick={onExit}
+          className="p-2 rounded-full bg-[#1A1A24] text-gray-400 hover:text-white transition-colors border border-[#2B2B3D]"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <div className="flex items-center gap-2">
+          <span className="text-xl">⚔️</span>
+          <h2 className="text-lg font-bold text-white uppercase tracking-wider font-display">
+            Word Duel
+          </h2>
+        </div>
+        <div className="w-9" />
       </div>
-      <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#7C3AED]/15 border border-[#7C3AED]/30 mb-4">
-        <span className="text-xs font-bold text-[#A78BFA] uppercase tracking-widest">⚡ Practice Mode — No Entry Fee</span>
+
+      {/* Practice Hero Card */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-[#13131A] border border-[#7C3AED]/30 shadow-2xl relative overflow-hidden text-center mb-6">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#7C3AED] to-transparent" />
+
+        <div className="w-20 h-20 mx-auto bg-[#7C3AED]/15 rounded-full flex items-center justify-center mb-5 border border-[#7C3AED]/40 shadow-[0_0_20px_rgba(124,58,237,0.35)]">
+          <Target className="w-10 h-10 text-[#A78BFA]" />
+        </div>
+
+        <h1
+          className="text-2xl font-bold text-white uppercase tracking-wider mb-2"
+          style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.08em" }}
+        >
+          Word Duel Practice
+        </h1>
+
+        <p className="text-gray-400 text-xs sm:text-sm mb-6 leading-relaxed max-w-sm mx-auto">
+          Form valid words from the letter set in 60 seconds. Sharpen your vocabulary with zero entry fee!
+        </p>
+
+        {/* Quick info chips */}
+        <div className="grid grid-cols-3 gap-2 mb-8">
+          <div className="p-3 rounded-2xl bg-[#0A0A0F] border border-[#1F1F2E] flex flex-col items-center justify-center">
+            <Timer className="w-4 h-4 text-[#F59E0B] mb-1" />
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Timer</span>
+            <span className="text-xs font-bold text-white mt-0.5">60 Seconds</span>
+          </div>
+          <div className="p-3 rounded-2xl bg-[#0A0A0F] border border-[#1F1F2E] flex flex-col items-center justify-center">
+            <HelpCircle className="w-4 h-4 text-[#A78BFA] mb-1" />
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Mode</span>
+            <span className="text-xs font-bold text-white mt-0.5">Anagrams</span>
+          </div>
+          <div className="p-3 rounded-2xl bg-[#0A0A0F] border border-[#1F1F2E] flex flex-col items-center justify-center">
+            <Zap className="w-4 h-4 text-[#10B981] mb-1" />
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Wager</span>
+            <span className="text-xs font-bold text-white mt-0.5">Free Practice</span>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={startGame}
+            disabled={loading}
+            style={{ minHeight: 52 }}
+            className="btn-press w-full py-4 bg-gradient-to-r from-[#7C3AED] to-[#6D28D9] hover:from-[#8B5CF6] hover:to-[#7C3AED] text-white font-bold text-sm rounded-2xl flex items-center justify-center gap-2 transition-all uppercase tracking-widest shadow-lg shadow-[#7C3AED]/25 disabled:opacity-50"
+          >
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin" />
+            ) : (
+              <>
+                <Play className="w-5 h-5 fill-current" /> Start Practice
+              </>
+            )}
+          </button>
+
+          <button
+            onClick={onChallengeReal}
+            style={{ minHeight: 48 }}
+            className="btn-press w-full py-3.5 bg-[#1A1A24] hover:bg-[#2B2B3D] text-[#A78BFA] font-bold text-xs rounded-2xl flex items-center justify-center gap-2 transition-colors border border-[#7C3AED]/40 uppercase tracking-widest"
+          >
+            <Sword className="w-4 h-4" /> Challenge for Real ⚔️
+          </button>
+        </div>
       </div>
-      <h1 className="text-2xl font-semibold text-white uppercase mb-3" style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.08em", fontWeight: 600 }}>
-        Practice Arena
-      </h1>
-      <p className="text-sm text-gray-400 leading-relaxed mb-8 max-w-xs mx-auto">
-        Form valid words from the letter set in 60 seconds. No wallet needed — just sharpen your skills.
-      </p>
-      <button
-        onClick={startGame}
-        disabled={loading}
-        className="btn-press w-full rounded-xl bg-[#10B981] hover:bg-[#059669] text-white font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 disabled:opacity-50 mb-4"
-        style={{ fontFamily: "'Inter', sans-serif", minHeight: 52 }}
-      >
-        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "▶ Start Practice"}
-      </button>
-      <button
-        onClick={onChallengeReal}
-        style={{ minHeight: 48 }}
-        className="btn-press w-full rounded-xl border border-[#7C3AED]/40 text-[#A78BFA] font-bold uppercase tracking-widest hover:bg-[#7C3AED]/10 transition-colors flex items-center justify-center gap-2"
-      >
-        <Sword className="w-4 h-4" /> Challenge for Real ⚔️
-      </button>
     </div>
   );
 
