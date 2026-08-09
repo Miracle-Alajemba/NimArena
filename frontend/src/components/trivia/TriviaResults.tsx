@@ -19,7 +19,6 @@ export function TriviaResults({ roundId, sessionId, score, onExit, onShowRipple 
   const { post } = useApi();
   const { submitTriviaScore, finalizeTrivia, txLoading, txError } = useContract();
   const { refresh: refreshBalance } = useUSDTBalance();
-
   const [proof, setProof] = useState<string | null>(null);
   const [proofLoading, setProofLoading] = useState(true);
   const [isSubmittedOnChain, setIsSubmittedOnChain] = useState(false);
@@ -34,7 +33,7 @@ export function TriviaResults({ roundId, sessionId, score, onExit, onShowRipple 
       try {
         const res = await post(`/api/trivia/session/${sessionId}/submit`);
         setProof(res.proof);
-      } catch {}
+      } catch { }
       finally { setProofLoading(false); }
     }
     fetchProof();
@@ -46,7 +45,8 @@ export function TriviaResults({ roundId, sessionId, score, onExit, onShowRipple 
       try {
         const data = await publicClient.readContract({
           address: CONTRACT_ADDRESS,
-          abi: [{ name: "getTriviaRound", type: "function", stateMutability: "view",
+          abi: [{
+            name: "getTriviaRound", type: "function", stateMutability: "view",
             inputs: [{ name: "roundId", type: "uint256" }],
             outputs: [
               { name: "creator", type: "address" }, { name: "fee", type: "uint256" },
@@ -61,7 +61,7 @@ export function TriviaResults({ roundId, sessionId, score, onExit, onShowRipple 
         } as any) as any;
         setRoundEnded(Number(data[3]) * 1000 <= Date.now());
         setPayoutFinalized(data[8] as boolean);
-      } catch {}
+      } catch { }
     }
     checkStatus();
     const i = setInterval(checkStatus, 10_000);
@@ -73,7 +73,7 @@ export function TriviaResults({ roundId, sessionId, score, onExit, onShowRipple 
     try {
       const hash = await submitTriviaScore(roundId, score, proof as `0x${string}`);
       if (hash) { setIsSubmittedOnChain(true); refreshBalance(); }
-    } catch {}
+    } catch { }
   };
 
   const handleFinalizePayout = async () => {
@@ -87,12 +87,12 @@ export function TriviaResults({ roundId, sessionId, score, onExit, onShowRipple 
         refreshBalance();
         setTimeout(() => setShowRipple(false), 2000);
       }
-    } catch {}
+    } catch { }
   };
 
   const handleShare = async () => {
     const text = `I scored ${score} points in Speed Trivia on NimArena! ⚡🏆 #NimArena #Cycle1`;
-    try { await navigator.clipboard.writeText(text); } catch {}
+    try { await navigator.clipboard.writeText(text); } catch { }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

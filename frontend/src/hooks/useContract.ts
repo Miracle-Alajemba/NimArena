@@ -44,6 +44,12 @@ export function useContract() {
       setTxLoading(true);
       setTxError(null);
 
+      if (CONTRACT_ADDRESS === "0x0000000000000000000000000000000000000000") {
+        setTxError("Smart contract is not deployed yet. Please configure VITE_CONTRACT_ADDRESS.");
+        setTxLoading(false);
+        return false;
+      }
+
       const symbol = tokenAddress.toLowerCase() === NIM_ADDRESS.toLowerCase() ? "NIM" : "USDT";
 
       try {
@@ -106,8 +112,11 @@ export function useContract() {
         throw new Error("Wallet not connected");
       }
 
-      setTxLoading(true);
-      setTxError(null);
+      if (CONTRACT_ADDRESS === "0x0000000000000000000000000000000000000000") {
+        setTxError("Smart contract address is not configured yet. Set VITE_CONTRACT_ADDRESS in environment.");
+        setTxLoading(false);
+        return null;
+      }
 
       try {
         // Ensure approval if the action requires staking tokens
