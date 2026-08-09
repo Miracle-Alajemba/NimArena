@@ -294,7 +294,7 @@ export function DailyWordPotGame({ onExit, onShowRipple }: DailyWordPotGameProps
                         key={i}
                         className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-2xl font-bold transition-all shadow-[0_4px_12px_rgba(0,0,0,0.4)] select-none
                           ${isUsed ? "bg-[#1A1A24] text-gray-600 border border-[#2B2B3D]" : "bg-[#1E1E2E] text-white border border-[#F59E0B]"}`}
-                        style={{ fontFamily: "'Syne', sans-serif", fontWeight: "bold", minWidth: 40, minHeight: 40 }}
+                        style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: "bold", minWidth: 40, minHeight: 40 }}
                       >
                         {letter}
                       </div>

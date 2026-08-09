@@ -73,10 +73,10 @@ export function GameGrid({ onSelectGame }: GameGridProps) {
       {/* Section header */}
       <div className="mb-5">
         <h2
-          className="text-2xl font-extrabold text-white tracking-tight mb-1"
-          style={{ fontFamily: "'Syne', sans-serif" }}
+          className="text-xl font-semibold text-white uppercase mb-1"
+          style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.08em", fontWeight: 600 }}
         >
-          Choose Your Arena
+          CHOOSE YOUR ARENA
         </h2>
         <p className="text-xs text-gray-500 font-body">
           Compete, earn, and prove your skills on-chain

@@ -63,8 +63,8 @@ export function GameCard({
 
       {/* Title */}
       <h3
-        className="text-lg font-extrabold text-white mb-1.5 tracking-tight"
-        style={{ fontFamily: "'Syne', sans-serif" }}
+        className="text-lg text-white mb-1.5 uppercase font-semibold"
+        style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.08em", fontWeight: 600 }}
       >
         {title}
       </h3>

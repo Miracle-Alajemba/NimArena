@@ -134,7 +134,7 @@ export function WordPotResults({ roundId, sessionId, score, onExit, onShowRipple
         {showRipple && <div className="gold-ripple" />}
       </div>
 
-      <h2 className="text-2xl font-extrabold text-white mb-1" style={{ fontFamily: "'Syne', sans-serif" }}>
+      <h2 className="text-2xl font-semibold text-white mb-1 uppercase" style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.08em", fontWeight: 600 }}>
         Word Pot Complete
       </h2>
       <p className="text-xs text-gray-400 mb-8">Round #{roundId} · Session ended</p>

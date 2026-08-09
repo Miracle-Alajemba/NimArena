@@ -219,7 +219,7 @@ export function WordPotGame({ roundId, entryFee, poolBalance, playerCount, curre
       {timesUp && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm times-up-flash">
           <div className="text-6xl mb-4">⏱️</div>
-          <h2 className="text-4xl font-extrabold text-white" style={{ fontFamily: "'Syne', sans-serif" }}>
+          <h2 className="text-4xl font-extrabold text-white uppercase" style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.08em", fontWeight: 700 }}>
             TIME'S UP!
           </h2>
           <p className="text-gray-400 mt-2 text-sm">Calculating your score...</p>
@@ -298,7 +298,7 @@ export function WordPotGame({ roundId, entryFee, poolBalance, playerCount, curre
               key={i}
               className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white text-2xl font-bold shadow-[0_4px_12px_rgba(0,0,0,0.4)] select-none transition-all"
               style={{
-                fontFamily: "'Syne', sans-serif",
+                fontFamily: "'Orbitron', sans-serif",
                 fontWeight: "bold",
                 background: "#1E1E2E",
                 border: "1px solid #F59E0B",
@@ -340,7 +340,7 @@ export function WordPotGame({ roundId, entryFee, poolBalance, playerCount, curre
             disabled={isChecking || timeLeft <= 0}
             autoFocus
             className="input-glow w-full bg-[#0A0A0F] border border-[#1F1F2E] rounded-xl px-4 py-4 text-center text-2xl text-white uppercase transition-all disabled:opacity-40"
-            style={{ fontFamily: "'Syne', sans-serif", letterSpacing: "0.15em" }}
+            style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.15em" }}
           />
           <button
             type="submit"

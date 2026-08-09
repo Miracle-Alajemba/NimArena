@@ -173,7 +173,7 @@ export function WordDuelPractice({ onExit, onChallengeReal }: WordDuelPracticePr
       <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#7C3AED]/15 border border-[#7C3AED]/30 mb-4">
         <span className="text-xs font-bold text-[#A78BFA] uppercase tracking-widest">⚡ Practice Mode — No Entry Fee</span>
       </div>
-      <h1 className="text-2xl font-extrabold text-white mb-3" style={{ fontFamily: "'Syne', sans-serif" }}>
+      <h1 className="text-2xl font-semibold text-white uppercase mb-3" style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.08em", fontWeight: 600 }}>
         Practice Arena
       </h1>
       <p className="text-sm text-gray-400 leading-relaxed mb-8 max-w-xs mx-auto">
@@ -218,7 +218,7 @@ export function WordDuelPractice({ onExit, onChallengeReal }: WordDuelPracticePr
         {letterChips.map((l, i) => (
           <div key={i}
             className="w-14 h-14 rounded-xl flex items-center justify-center text-white text-2xl font-extrabold shadow transition-all select-none"
-            style={{ fontFamily: "'Syne', sans-serif", background: "#1E1E2E", border: "1px solid #7C3AED", minWidth: 56, minHeight: 56 }}
+            style={{ fontFamily: "'Orbitron', sans-serif", background: "#1E1E2E", border: "1px solid #7C3AED", minWidth: 56, minHeight: 56 }}
           >{l}</div>
         ))}
       </div>
@@ -252,7 +252,7 @@ export function WordDuelPractice({ onExit, onChallengeReal }: WordDuelPracticePr
             disabled={isChecking}
             autoFocus
             className="input-glow w-full bg-[#0A0A0F] border border-[#1F1F2E] rounded-xl px-4 py-4 text-center text-2xl text-white uppercase transition-all disabled:opacity-40"
-            style={{ fontFamily: "'Syne', sans-serif", letterSpacing: "0.15em" }}
+            style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.15em" }}
           />
           <button
             type="submit"
@@ -295,7 +295,7 @@ export function WordDuelPractice({ onExit, onChallengeReal }: WordDuelPracticePr
   return (
     <div className="w-full bg-[#13131A] rounded-2xl p-8 border-2 border-[#A78BFA]/25 shadow-[0_0_35px_rgba(167,139,250,0.1)] text-center page-fade-in">
       <Trophy className="w-16 h-16 text-[#A78BFA] mx-auto mb-4" />
-      <h1 className="text-3xl font-extrabold text-white mb-6" style={{ fontFamily: "'Syne', sans-serif" }}>Time's Up! ⏱️</h1>
+      <h1 className="text-3xl font-extrabold text-white mb-6 uppercase" style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.08em", fontWeight: 700 }}>Time's Up! ⏱️</h1>
 
       <div className="grid grid-cols-3 gap-3 mb-8">
         {[

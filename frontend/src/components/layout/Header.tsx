@@ -32,9 +32,11 @@ export function Header({ onBack }: HeaderProps) {
 
           <div className="flex flex-col">
             <span
-              className="text-xs sm:text-sm font-extrabold tracking-[0.14em] uppercase leading-none"
+              className="text-xs sm:text-sm font-bold uppercase leading-none"
               style={{
-                fontFamily: "'Syne', sans-serif",
+                fontFamily: "'Orbitron', sans-serif",
+                fontWeight: 700,
+                letterSpacing: "0.08em",
                 background: "linear-gradient(90deg, #fff 30%, #A78BFA 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",

@@ -12,7 +12,7 @@
   --color-text-muted: #9CA3AF;
   --color-border: #1F1F2E;
 
-  --font-display: 'Syne', sans-serif;
+  --font-display: 'Orbitron', sans-serif;
   --font-body: 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
@@ -35,9 +35,10 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1, h2, h3, h4, h5, h6, .font-display {
     font-family: var(--font-display);
-    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .mono-font {
