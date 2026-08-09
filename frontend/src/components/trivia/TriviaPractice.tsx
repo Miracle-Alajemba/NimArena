@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useApi } from "../../hooks/useApi";
-import { Timer, CheckCircle2, XCircle, Trophy, Play, Sword, Target } from "lucide-react";
+import { Timer, CheckCircle2, XCircle, Trophy, Play, Sword, Target, ArrowLeft, HelpCircle, Zap } from "lucide-react";
 
 interface TriviaPracticeProps {
   onExit: () => void;
@@ -230,28 +230,87 @@ export function TriviaPractice({ onExit, onChallengeReal }: TriviaPracticeProps)
 
   if (!isPlaying && !isGameOver) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center">
-        <div className="w-full bg-[#13131A] rounded-2xl p-8 border-2 border-[#10B981]/30 shadow-[0_0_30px_rgba(16,185,129,0.1)] text-center">
-          <div className="w-16 h-16 mx-auto bg-[#10B981]/20 rounded-full flex items-center justify-center mb-4 border border-[#10B981]/50 shadow-[0_0_15px_rgba(16,185,129,0.4)]">
-            <Target className="w-8 h-8 text-[#10B981]" />
+      <div className="w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto pt-6 px-4 page-fade-in pb-24">
+        {/* Top Header */}
+        <div className="flex justify-between items-center mb-6">
+          <button
+            onClick={onExit}
+            className="p-2 rounded-full bg-[#1A1A24] text-gray-400 hover:text-white transition-colors border border-[#2B2B3D]"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-xl">⚡</span>
+            <h2 className="text-lg font-bold text-white uppercase tracking-wider font-display">
+              Speed Trivia
+            </h2>
           </div>
-          <h1 className="text-2xl font-display font-extrabold tracking-widest uppercase mb-2">Trivia Practice</h1>
-          <p className="text-gray-400 text-sm mb-8 leading-relaxed">
-            Test your knowledge with 10 random questions. 15 seconds per question. Faster answers earn more points!
+          <div className="w-9" />
+        </div>
+
+        {/* Practice Hero Card */}
+        <div className="p-6 sm:p-8 rounded-3xl bg-[#13131A] border border-[#7C3AED]/30 shadow-2xl relative overflow-hidden text-center mb-6">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#7C3AED] to-transparent" />
+
+          <div className="w-20 h-20 mx-auto bg-[#7C3AED]/15 rounded-full flex items-center justify-center mb-5 border border-[#7C3AED]/40 shadow-[0_0_20px_rgba(124,58,237,0.35)]">
+            <Target className="w-10 h-10 text-[#A78BFA]" />
+          </div>
+
+          <h1
+            className="text-2xl font-bold text-white uppercase tracking-wider mb-2"
+            style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.08em" }}
+          >
+            Trivia Practice
+          </h1>
+
+          <p className="text-gray-400 text-xs sm:text-sm mb-6 leading-relaxed max-w-sm mx-auto">
+            Test your knowledge with 10 rapid-fire questions. 15 seconds per question. Faster answers earn higher multiplier points!
           </p>
-          <button
-            onClick={startGame}
-            disabled={loading}
-            className="w-full py-4 bg-[#10B981] hover:bg-[#059669] text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors uppercase tracking-widest disabled:opacity-50"
-          >
-            {loading ? "Loading..." : <><Play className="w-5 h-5" /> Start Practice</>}
-          </button>
-          <button
-            onClick={onChallengeReal}
-            className="w-full mt-4 py-4 bg-transparent hover:bg-[#1F1F2E] text-[#10B981] font-bold rounded-xl flex items-center justify-center gap-2 transition-colors border border-[#10B981]/30 uppercase tracking-widest"
-          >
-            <Sword className="w-5 h-5" /> Challenge for Real
-          </button>
+
+          {/* Quick info chips */}
+          <div className="grid grid-cols-3 gap-2 mb-8">
+            <div className="p-3 rounded-2xl bg-[#0A0A0F] border border-[#1F1F2E] flex flex-col items-center justify-center">
+              <HelpCircle className="w-4 h-4 text-[#A78BFA] mb-1" />
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Count</span>
+              <span className="text-xs font-bold text-white mt-0.5">10 Questions</span>
+            </div>
+            <div className="p-3 rounded-2xl bg-[#0A0A0F] border border-[#1F1F2E] flex flex-col items-center justify-center">
+              <Timer className="w-4 h-4 text-[#F59E0B] mb-1" />
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Timer</span>
+              <span className="text-xs font-bold text-white mt-0.5">15s / Q</span>
+            </div>
+            <div className="p-3 rounded-2xl bg-[#0A0A0F] border border-[#1F1F2E] flex flex-col items-center justify-center">
+              <Zap className="w-4 h-4 text-[#10B981] mb-1" />
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Bonus</span>
+              <span className="text-xs font-bold text-white mt-0.5">Speed Multi</span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={startGame}
+              disabled={loading}
+              style={{ minHeight: 52 }}
+              className="btn-press w-full py-4 bg-gradient-to-r from-[#7C3AED] to-[#6D28D9] hover:from-[#8B5CF6] hover:to-[#7C3AED] text-white font-bold text-sm rounded-2xl flex items-center justify-center gap-2 transition-all uppercase tracking-widest shadow-lg shadow-[#7C3AED]/25 disabled:opacity-50"
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Play className="w-5 h-5 fill-current" /> Start Practice
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={onChallengeReal}
+              style={{ minHeight: 48 }}
+              className="btn-press w-full py-3.5 bg-[#1A1A24] hover:bg-[#2B2B3D] text-[#A78BFA] font-bold text-xs rounded-2xl flex items-center justify-center gap-2 transition-colors border border-[#7C3AED]/40 uppercase tracking-widest"
+            >
+              <Sword className="w-4 h-4" /> Challenge for Real ⚡
+            </button>
+          </div>
         </div>
       </div>
     );
