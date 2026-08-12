@@ -98,8 +98,11 @@ router.get("/:game", async (req: Request, res: Response) => {
       playerRank: playerRankData,
     });
   } catch (error) {
-    console.error("LeaderboardService: Failed to fetch leaderboard:", error);
-    return res.status(500).json({ error: "Failed to fetch leaderboard" });
+    console.error("LeaderboardService: Database offline or query failed:", error);
+    return res.json({
+      leaderboard: [],
+      playerRank: playerAddress ? { rank: "-", walletAddress: playerAddress, wins: 0, totalEarned: "0", lastWinAt: null } : null,
+    });
   }
 });
 
