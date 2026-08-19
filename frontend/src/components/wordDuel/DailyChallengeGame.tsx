@@ -5,7 +5,7 @@ import { useUSDTBalance } from "../../hooks/useUSDTBalance";
 import { Flame, Timer, Check, AlertCircle, Award, CheckCircle, ChevronLeft, ArrowRight, ShieldCheck } from "lucide-react";
 import { formatUSDT } from "../../lib/formatters";
 import { isSubsetOfLetters, calculateWordScore } from "../../games/words/WordEngine";
-import { validateWord } from "../../games/words/WordValidation";
+import { validateWord, isValidWord } from "../../games/words/WordValidation";
 
 interface DailyChallengeGameProps {
   onComplete: () => void;
@@ -125,11 +125,13 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
   }, [loading, claiming]);
 
   const processLocalWordSubmit = async (cleanWord: string) => {
+    const existingWords = foundWords.map((w) => w.word);
+
     if (cleanWord.length < 3) {
       setErrorMsg("Word must be at least 3 letters.");
       return;
     }
-    if (foundWords.some((w) => w.word.toUpperCase() === cleanWord)) {
+    if (existingWords.some((w) => w.toUpperCase() === cleanWord)) {
       setErrorMsg("Word already found!");
       return;
     }
@@ -137,9 +139,9 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
       setErrorMsg("Use only letters from the source word!");
       return;
     }
-    const isValid = await validateWord(cleanWord);
-    if (!isValid) {
-      setErrorMsg("Not a valid dictionary word.");
+    const valid = isValidWord(cleanWord, sourceWord || "DEVELOPER", existingWords);
+    if (!valid) {
+      setErrorMsg("Not a valid English dictionary word.");
       return;
     }
 
