@@ -133,7 +133,11 @@ export function TriviaGame({ roundId, entryFee, onComplete, onExit }: TriviaGame
           >
             Question {currentQIndex + 1} of {questions.length} ⚡
           </span>
-          <div className="text-[10px] text-gray-500 mt-0.5 font-mono">{currentQ.category}</div>
+          <div className="mt-1">
+            <span className="text-[10px] font-extrabold font-mono uppercase tracking-wider bg-[#7C3AED]/20 border border-[#7C3AED]/40 text-[#A78BFA] px-2 py-0.5 rounded-md">
+              🏷️ {currentQ.category}
+            </span>
+          </div>
         </div>
 
         {/* Score */}
