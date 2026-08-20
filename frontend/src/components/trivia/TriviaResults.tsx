@@ -6,6 +6,7 @@ import { CheckCircle, ShieldCheck, ChevronRight } from "lucide-react";
 import { publicClient } from "../../lib/viemClient";
 import { CONTRACT_ADDRESS } from "../../config/constants";
 import { Confetti } from "../layout/Confetti";
+import { BadgeDisplay, addCorrectAnswers } from "../../features/badges/BadgeSystem";
 
 interface TriviaResultsProps {
   roundId: number;
@@ -27,6 +28,14 @@ export function TriviaResults({ roundId, sessionId, score, onExit, onShowRipple 
   const [showConfetti, setShowConfetti] = useState(false);
   const [showRipple, setShowRipple] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [totalCorrectCount, setTotalCorrectCount] = useState<number>(0);
+
+  useEffect(() => {
+    // Record correct answers for badge progress
+    const estimatedCorrect = Math.min(10, Math.max(1, Math.floor(score / 100)));
+    const updatedTotal = addCorrectAnswers(estimatedCorrect);
+    setTotalCorrectCount(updatedTotal);
+  }, [score]);
 
   useEffect(() => {
     async function fetchProof() {
@@ -91,7 +100,7 @@ export function TriviaResults({ roundId, sessionId, score, onExit, onShowRipple 
   };
 
   const handleShare = async () => {
-    const text = `I scored ${score} points in Speed Trivia on NimArena! ⚡🏆 #NimArena #Cycle1`;
+    const text = `I scored ${score} points in Speed Trivia on NimArena! ⚡🏆 #NimArena #Nimiq`;
     try { await navigator.clipboard.writeText(text); } catch { }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -101,26 +110,31 @@ export function TriviaResults({ roundId, sessionId, score, onExit, onShowRipple 
     <div className="pb-24 px-5 w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto pt-6 text-center page-fade-in">
       <Confetti active={showConfetti} />
 
-      {/* Badge */}
-      <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#7C3AED]/15 border border-[#7C3AED]/30 mb-5">
+      {/* Icon Badge */}
+      <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#7C3AED]/15 border border-[#7C3AED]/30 mb-4">
         <span className="text-4xl">⚡</span>
         {showRipple && <div className="gold-ripple" />}
       </div>
 
-      <h2 className="text-2xl font-semibold text-white mb-1 uppercase" style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.08em", fontWeight: 600 }}>
+      <h2 className="text-2xl font-semibold text-white mb-1 uppercase font-display tracking-wide">
         Trivia Complete
       </h2>
-      <p className="text-xs text-gray-400 mb-8">Round #{roundId} · 10 questions answered</p>
+      <p className="text-xs text-gray-400 mb-5">Round #{roundId} · 10 Nimiq Questions Answered</p>
+
+      {/* Badge Achievement Card */}
+      <div className="flex justify-center mb-6">
+        <BadgeDisplay totalCorrect={totalCorrectCount} />
+      </div>
 
       {/* Score */}
       <div className="p-6 rounded-2xl bg-[#13131A] border border-[#1F1F2E] mb-6 flex flex-col items-center">
         <span className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Your Score</span>
-        <span className="text-5xl font-extrabold text-[#F59E0B] mt-2" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+        <span className="text-5xl font-extrabold text-[#F59E0B] mt-2 font-mono">
           {score}
         </span>
         <div className="mt-4 flex items-center gap-1.5 px-3 py-1 bg-[#10B981]/10 border border-[#10B981]/25 text-[#10B981] rounded-full">
           <ShieldCheck className="w-3.5 h-3.5" />
-          <span className="text-[10px] font-bold uppercase tracking-wide">Backend Verified</span>
+          <span className="text-[10px] font-bold uppercase tracking-wide">Verified Achievement</span>
         </div>
       </div>
 
@@ -191,4 +205,5 @@ export function TriviaResults({ roundId, sessionId, score, onExit, onShowRipple 
     </div>
   );
 }
+
 export default TriviaResults;

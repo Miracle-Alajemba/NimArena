@@ -46,24 +46,24 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
       if (!walletAddress) return;
       setLoading(true);
       setErrorMsg(null);
-      
+
       try {
         const res = await post("/api/daily/start", {
           walletAddress: walletAddress.toLowerCase(),
         });
-        
+
         const srcWord = (res && res.sourceWord) ? String(res.sourceWord).toUpperCase() : "DEVELOPER";
         setSessionId(res?.sessionId || "daily-duel-local");
         setSourceWord(srcWord);
         setTargetScore(res?.targetScore || 50);
         setRewardAmount(res?.rewardAmount || "1.00");
-        
+
         const expiry = res?.expiresAt ? new Date(res.expiresAt).getTime() : Date.now() + 15 * 60 * 1000;
         setExpiresAt(expiry);
-        
+
         const remaining = Math.max(0, expiry - Date.now());
         setTimeLeftMs(remaining);
-        
+
         // Start countdown
         if (timerRef.current) clearInterval(timerRef.current);
         timerRef.current = setInterval(() => {
@@ -87,9 +87,9 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
         setLoading(false);
       }
     }
-    
+
     startSession();
-    
+
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
@@ -103,7 +103,7 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
       if (!inputEl) return;
 
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      
+
       // If the input is not active, focus it and append letter
       if (document.activeElement !== inputEl) {
         if (e.key.length === 1 && /^[a-zA-Z]$/.test(e.key)) {
@@ -155,11 +155,11 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
   const handleSubmitWord = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentInput.trim()) return;
-    
+
     setErrorMsg(null);
     setSuccessMsg(null);
     const cleanWord = currentInput.trim().toUpperCase();
-    
+
     if (sessionId?.includes("local")) {
       await processLocalWordSubmit(cleanWord);
       return;
@@ -170,7 +170,7 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
         sessionId,
         word: cleanWord.toLowerCase(),
       });
-      
+
       setFoundWords((prev) => [...prev, { word: res.word, score: res.score }]);
       setScore(res.totalScore);
       setSuccessMsg(`+${res.score} pts: "${res.word.toUpperCase()}" added!`);
@@ -183,10 +183,10 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
 
   const handleClaimReward = async () => {
     if (!walletAddress || score < targetScore) return;
-    
+
     setClaiming(true);
     setErrorMsg(null);
-    
+
     try {
       if (sessionId?.includes("local")) {
         const mockHash = "0x" + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
@@ -200,7 +200,7 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
         sessionId,
         walletAddress: walletAddress.toLowerCase(),
       });
-      
+
       setClaimHash(res.txHash);
       onShowRipple();
       refreshBalance();
@@ -241,7 +241,7 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
         <div className="w-20 h-20 rounded-full bg-[#10B981]/15 border border-[#10B981]/30 text-[#10B981] flex items-center justify-center mb-6 animate-bounce">
           <Award className="w-10 h-10" />
         </div>
-        
+
         <h2 className="text-2xl font-extrabold text-white tracking-wide font-display uppercase">
           Reward Disbursed!
         </h2>
@@ -257,7 +257,7 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
           <div className="text-xs text-gray-300 font-mono mt-1 break-all overflow-hidden bg-black/40 p-2.5 rounded-lg border border-[#2B2B3D]">
             {claimHash}
           </div>
-          
+
           <div className="mt-3 flex items-center gap-1.5 text-[10px] text-[#10B981] font-bold uppercase tracking-wide">
             <ShieldCheck className="w-4 h-4" />
             <span>Paid via Base Sepolia Contract</span>
@@ -282,7 +282,7 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
               } else {
                 await navigator.clipboard.writeText(text);
               }
-            } catch { await navigator.clipboard.writeText(text).catch(() => {}); }
+            } catch { await navigator.clipboard.writeText(text).catch(() => { }); }
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
           }}
@@ -315,7 +315,7 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
             Daily Anagram
           </h2>
         </div>
-        
+
         {/* Expiry count */}
         <div className="flex items-center gap-1 text-xs text-gray-400 font-mono">
           <Timer className="w-4 h-4 text-[#EF4444]" />
@@ -360,9 +360,8 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
       <div className="w-full bg-[#1A1A24] h-2.5 rounded-full overflow-hidden mb-6 border border-[#2B2B3D]">
         <div
           style={{ width: `${progressPercent}%` }}
-          className={`h-full transition-all duration-300 ${
-            isGoalReached ? "bg-[#10B981]" : "bg-[#7C3AED]"
-          }`}
+          className={`h-full transition-all duration-300 ${isGoalReached ? "bg-[#10B981]" : "bg-[#7C3AED]"
+            }`}
         />
       </div>
 
@@ -414,7 +413,7 @@ export function DailyChallengeGame({ onComplete, onExit, onShowRipple }: DailyCh
         <h3 className="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider mb-2">
           Words Found ({foundWords.length})
         </h3>
-        
+
         {foundWords.length === 0 ? (
           <div className="py-8 text-center text-xs text-gray-600 border border-dashed border-[#1F1F2E] rounded-xl bg-[#13131A]/10">
             Build valid sub-words using the letters above
